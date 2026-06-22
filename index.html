@@ -51,6 +51,8 @@
   .cell img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
   .cell.done .task, .cell.done .cam { display: none; }
   .cell.done::after { content: "\2713"; position: absolute; top: 6px; left: 8px; font-size: 1rem; color: #fff; text-shadow: 0 1px 4px rgba(0,0,0,.5); font-weight: 700; }
+  .cell .banner { position: absolute; left: 0; right: 0; bottom: 0; padding: 6px 8px 7px; background: linear-gradient(to top, rgba(43,33,24,.82), rgba(43,33,24,0)); color: #fff; font-size: .62rem; font-weight: 600; line-height: 1.2; text-align: center; display: none; }
+  .cell.done .banner { display: block; }
   .cell .count { position: absolute; bottom: 6px; right: 6px; background: var(--plum); color: #fff; font-size: .68rem; font-weight: 600; padding: 1px 7px; border-radius: 999px; box-shadow: 0 1px 4px rgba(0,0,0,.3); }
   .cell.pending { opacity: .6; }
   .cell.pending::before { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(45deg, transparent, transparent 8px, rgba(110,59,78,.06) 8px, rgba(110,59,78,.06) 16px); }
@@ -83,7 +85,7 @@
   <section id="view-card" class="view">
     <div class="topbar"><button class="back" onclick="show('tables')">&larr;</button><span class="ttl" id="cardTitle">Bord</span><button class="wall-link" onclick="openWall()">V&auml;ggen &rarr;</button></div>
     <div id="bingoGrid" class="grid"></div>
-    <p class="footnote">Tryck p&aring; en ruta &rarr; kameran &ouml;ppnas &rarr; fotot fyller brickan och hamnar p&aring; v&auml;ggen.</p>
+    <p class="footnote">Tryck p&aring; en ruta &rarr; kameran &ouml;ppnas &rarr; fotot fyller brickan och hamnar p&aring; v&auml;ggen.<br>Ta g&auml;rna <strong>flera bilder p&aring; samma uppgift</strong> &mdash; ju fler desto roligare!</p>
   </section>
   <section id="view-wall" class="view">
     <div class="topbar"><button class="back" onclick="show(lastView)">&larr;</button><span class="ttl">Bildv&auml;ggen</span></div>
@@ -138,6 +140,7 @@
       const matches = feed.filter(f => f.table === currentTable && f.taskIndex === idx).sort((a,b) => a.ts - b.ts);
       if (matches.length) {
         const img = document.createElement('img'); img.src = matches[0].url; label.appendChild(img); label.classList.add('done');
+        const ban = document.createElement('span'); ban.className = 'banner'; ban.textContent = task; label.appendChild(ban);
         if (matches.length > 1) { const c = document.createElement('span'); c.className = 'count'; c.textContent = '+' + (matches.length - 1); label.appendChild(c); }
       }
       input.addEventListener('change', e => {
@@ -145,6 +148,7 @@
         const img = document.createElement('img'); img.src = URL.createObjectURL(file);
         label.querySelector('img') && label.querySelector('img').remove();
         label.appendChild(img); label.classList.add('done', 'pending');
+        if (!label.querySelector('.banner')) { const ban = document.createElement('span'); ban.className = 'banner'; ban.textContent = task; label.appendChild(ban); }
         uploadPhoto(file, currentTable, idx, label);
       });
       grid.appendChild(label);
