@@ -137,7 +137,7 @@
       input.type = 'file'; input.accept = 'image/*'; input.setAttribute('capture', 'environment');
       const taskEl = document.createElement('span'); taskEl.className = 'task'; taskEl.textContent = task;
       label.appendChild(taskEl); label.insertAdjacentHTML('beforeend', camIcon); label.appendChild(input);
-      const matches = feed.filter(f => f.table === currentTable && f.taskIndex === idx).sort((a,b) => a.ts - b.ts);
+      const matches = feed.filter(f => f.table === currentTable && f.taskIndex === idx).sort((a,b) => b.ts - a.ts);
       if (matches.length) {
         const img = document.createElement('img'); img.src = matches[0].url; label.appendChild(img); label.classList.add('done');
         const ban = document.createElement('span'); ban.className = 'banner'; ban.textContent = task; label.appendChild(ban);
