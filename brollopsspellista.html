@@ -16,13 +16,11 @@
   html,body{background:var(--paper);color:var(--ink);font-family:"Iowan Old Style",Palatino,"Palatino Linotype",Georgia,serif}
   body{padding:0 0 130px}
   .sans{font-family:"Helvetica Neue",Arial,sans-serif}
-
   header{text-align:center;padding:46px 20px 30px;border-bottom:1px solid var(--line);background:linear-gradient(180deg,#fffdf9,transparent)}
   .eyebrow{font-family:"Helvetica Neue",Arial,sans-serif;text-transform:uppercase;letter-spacing:.34em;font-size:11px;color:var(--gold-deep);font-weight:600;margin-bottom:14px}
   h1{font-size:clamp(28px,6vw,42px);font-weight:400;line-height:1.08}
   h1 .amp{color:var(--gold);font-style:italic}
   .sub{margin-top:12px;color:var(--muted);font-size:15px;font-style:italic}
-
   .bar{position:sticky;top:0;z-index:30;background:rgba(250,246,239,.94);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:11px 16px;font-family:"Helvetica Neue",Arial,sans-serif;font-size:13px}
   .dot{width:9px;height:9px;border-radius:50%;background:#c9c0b0;flex:none}
   .dot.on{background:var(--sage)}
@@ -33,9 +31,7 @@
   .btn:hover{filter:brightness(1.05)} .btn:active{transform:translateY(1px)}
   .btn.ghost{background:none;color:var(--gold-deep)}
   .btn[disabled]{opacity:.4;cursor:not-allowed}
-
   .wrap{max-width:860px;margin:0 auto;padding:0 16px}
-
   .panel{margin:22px auto;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;box-shadow:var(--shadow)}
   .panel h2{font-size:18px;font-weight:400;margin-bottom:6px}
   .panel p{font-size:13.5px;color:var(--muted);line-height:1.55;margin-bottom:12px}
@@ -43,31 +39,30 @@
   .panel ol{margin:8px 0 14px 20px;font-size:13px;color:var(--muted);line-height:1.7}
   .panel code{background:#f1ebdd;padding:1px 6px;border-radius:5px;font-size:12px;word-break:break-all}
   .field-label{font-family:"Helvetica Neue",Arial,sans-serif;font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--gold-deep);font-weight:600;margin:12px 0 5px}
-
   .cue{background:var(--card);border:1px solid var(--line);border-radius:14px;margin-bottom:14px;box-shadow:var(--shadow);overflow:hidden;transition:border-color .2s,box-shadow .2s}
   .cue.active{border-color:var(--gold);box-shadow:0 0 0 2px rgba(176,141,79,.18),var(--shadow)}
   .cue.tm{background:linear-gradient(180deg,#f6f8fc,#fffdf9)}
   .cue-top{display:flex;gap:13px;padding:15px 17px 4px;align-items:flex-start}
   .clock{font-family:"Helvetica Neue",Arial,sans-serif;font-weight:700;font-size:14px;color:var(--gold-deep);flex:none;min-width:46px;padding-top:3px}
   .cue.tm .clock{color:var(--tm)}
-  .fields{flex:1;display:flex;flex-direction:column;gap:7px;min-width:0}
+  .fields{flex:1;display:flex;flex-direction:column;gap:6px;min-width:0}
   .moment{font-size:16px;line-height:1.3}
   .songname{font-family:"Helvetica Neue",Arial,sans-serif;font-size:12.5px;color:var(--muted);font-style:italic}
   .tmtag{display:inline-block;font-family:"Helvetica Neue",Arial,sans-serif;font-size:10px;font-weight:700;letter-spacing:.08em;color:#fff;background:var(--tm);border-radius:5px;padding:1px 6px;vertical-align:middle;margin-left:6px}
-  .row2{display:flex;gap:8px;flex-wrap:wrap;margin-top:2px}
+  .meta{font-family:"Helvetica Neue",Arial,sans-serif;font-size:11px;color:var(--muted);margin-top:3px;display:flex;gap:12px;flex-wrap:wrap}
+  .meta .ok{color:var(--sage)}
+  .meta .warn{color:var(--rose)}
+  .fallback{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
   .url{flex:1;min-width:170px;font-family:"Helvetica Neue",Arial,sans-serif;font-size:12px;border:1px solid var(--line);border-radius:8px;padding:7px 10px;background:#fff;color:var(--muted)}
   .time{width:90px;font-family:"Helvetica Neue",Arial,sans-serif;font-size:13px;border:1px solid var(--line);border-radius:8px;padding:7px 10px;background:#fff;text-align:center}
   .url:focus,.time:focus{outline:none;border-color:var(--gold)}
   .cue-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:11px 17px 15px 76px}
   .play{font-family:"Helvetica Neue",Arial,sans-serif;font-weight:600;font-size:14px;background:var(--rose);color:#fff;border:none;border-radius:999px;padding:10px 20px;cursor:pointer;display:flex;align-items:center;gap:7px;transition:filter .15s,transform .05s}
   .play:hover{filter:brightness(1.06)} .play:active{transform:translateY(1px)}
-  .play.playing{background:var(--sage)}
+  .play[disabled]{opacity:.4;cursor:not-allowed}
   .mini{font-family:"Helvetica Neue",Arial,sans-serif;font-size:13px;font-weight:600;background:none;border:1px solid var(--line);border-radius:999px;padding:8px 14px;cursor:pointer;color:var(--ink);transition:background .15s,border-color .15s}
   .mini:hover{background:#f4eede;border-color:var(--gold)}
   .mini[disabled]{opacity:.35;cursor:not-allowed}
-  .badge{font-family:"Helvetica Neue",Arial,sans-serif;font-size:11px;color:var(--muted);margin-left:auto}
-  .badge.bad{color:var(--rose)}
-
   .dock{position:fixed;left:0;right:0;bottom:0;z-index:40;background:rgba(26,20,16,.96);backdrop-filter:blur(10px);color:#f4ede0;padding:12px 16px calc(12px + env(safe-area-inset-bottom));display:flex;gap:12px;align-items:center;flex-wrap:wrap}
   .dock .label{font-family:"Helvetica Neue",Arial,sans-serif;font-size:11px;text-transform:uppercase;letter-spacing:.14em;color:#c9b98f}
   .dock .bg-btn{font-family:"Helvetica Neue",Arial,sans-serif;font-weight:700;font-size:14px;background:var(--gold);color:#1a1410;border:none;border-radius:999px;padding:11px 20px;cursor:pointer;display:flex;align-items:center;gap:8px}
@@ -76,19 +71,16 @@
   .dock .now{flex:1;min-width:120px;font-family:"Helvetica Neue",Arial,sans-serif;font-size:12.5px;color:#d8cdb8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .dock .dmini{font-family:"Helvetica Neue",Arial,sans-serif;font-size:13px;background:none;border:1px solid rgba(244,237,224,.3);color:#f4ede0;border-radius:999px;padding:8px 13px;cursor:pointer}
   .dock .dmini[disabled]{opacity:.4;cursor:not-allowed}
-
-  footer{text-align:center;color:var(--muted);font-size:12px;margin-top:30px;font-family:"Helvetica Neue",Arial,sans-serif}
+  footer{text-align:center;color:var(--muted);font-size:12px;margin-top:30px;font-family:"Helvetica Neue",Arial,sans-serif;line-height:1.6}
   .empty{text-align:center;color:var(--muted);font-style:italic;padding:30px 10px}
 </style>
 </head>
 <body>
-
 <header>
   <div class="eyebrow">Sofia &amp; Pontus</div>
   <h1>Musikstyrning<span class="amp"> för </span>kvällen</h1>
-  <div class="sub">Live från körschemat — varje låt startar precis där den ska</div>
+  <div class="sub">Låtar och tider läses live från körschemat</div>
 </header>
-
 <div class="bar">
   <span class="dot" id="dot"></span>
   <span class="status-text" id="status">Inte ansluten</span>
@@ -97,12 +89,10 @@
   <button class="btn" id="connectBtn">Anslut Spotify</button>
   <button class="link" id="settingsBtn">Inställningar</button>
 </div>
-
 <div class="wrap">
-
   <div class="panel" id="setup">
     <h2>Engångsinställning</h2>
-    <p>Appen behöver ett gratis <strong>Client ID</strong> från Spotify för att kunna styra uppspelningen. Görs en gång:</p>
+    <p>Appen behöver ett gratis <strong>Client ID</strong> från Spotify för att styra uppspelningen.</p>
     <ol>
       <li>Gå till <code>developer.spotify.com/dashboard</code> &rarr; <strong>Create app</strong>.</li>
       <li>Sätt <strong>Redirect URI</strong> till exakt denna sidas adress:<br><code id="redirectShow">&mdash;</code></li>
@@ -110,33 +100,29 @@
     </ol>
     <div class="field-label">Spotify Client ID</div>
     <input type="text" id="clientId" placeholder="Klistra in Client ID" autocomplete="off">
-
     <div class="field-label">Bakgrundsspellista (Spotify-länk)</div>
     <input type="text" id="bgUrl" placeholder="https://open.spotify.com/playlist/…" autocomplete="off">
-
     <div class="field-label">Körschema-källa (byt bara om länken slutar fungera)</div>
     <input type="text" id="feedUrl" placeholder="URL till körschema-JSON" autocomplete="off">
-
-    <p style="margin-top:12px">Kräver <strong>Spotify Premium</strong>. Musiken spelas i denna flik — koppla datorn till festens ljudanläggning.</p>
+    <p style="margin-top:12px">Kräver <strong>Spotify Premium</strong>. Musiken spelas i denna flik — koppla datorn till festens ljudanläggning.<br>
+    Låtlänk och starttid läses från kolumnerna <strong>Spotify-länk</strong> och <strong>Starta låt från</strong> i körschemat. Fälten under varje punkt är bara reserv om arket saknar länk.</p>
   </div>
-
   <div id="list"></div>
-
   <div style="text-align:center;margin:14px 0 30px">
-    <button class="btn ghost" id="saveBtn">Spara låtlänkar &amp; tider</button>
+    <button class="btn ghost" id="saveBtn">Spara reservlänkar</button>
     <span id="savedMsg" class="sans" style="font-size:12px;color:var(--sage);margin-left:8px"></span>
   </div>
-
-  <footer>Låtlänkar och starttider sparas i denna webbläsare. Momenten läses live från körschemat.</footer>
+  <footer>
+    Låtar och tider hämtas live från körschemat — ändra i arket och tryck Synka.<br>
+    Reservlänkarna (om du fyller i dem här) sparas i denna webbläsare.
+  </footer>
 </div>
-
 <div class="dock">
   <span class="label">Bakgrund</span>
   <button class="bg-btn" id="bgBtn" disabled>&#9654; Bakgrundsmusik (shuffle)</button>
   <button class="dmini" id="bgToggle" disabled>Pausa</button>
   <span class="now" id="nowPlaying">&mdash;</span>
 </div>
-
 <script>
 /* ============ KONFIG ============ */
 const FEED_DEFAULT = "https://script.googleusercontent.com/macros/echo?user_content_key=AUkAhnQmsIdonqVlyGucYBPOQnfOicIc0WC5liH23yLilGssJwTR4ZGj25k_YVgpw_Ts6l4vt3A6Q60rzwRebbPh1E_gwtwLvcganohqBZXOUdMY0qspizjTRg1omFMpLdocGQ_t8m7RVCv5cYo6bv6QmMddMacG1OONiCnHAH21t5VBPw2mcptZRQ1V0_WfiBwd17wVoa5d4TfvfjOY073CYJrGLYZLE7znjlBKXsIoHMxtvguzOdjIQIqwzVbJkCS3ljebD__sxvkbQq3XOBKFuMv3hhHaKQ&lib=MCA8XB6qY4smo6GuxIp2_lWwkZEVFKZry";
@@ -149,7 +135,6 @@ let player=null, deviceId=null, token=null, clientId=null, bgUrl="", feedUrl=FEE
 let rows=[], overrides={};
 let activeCue=null, isPaused=false, fadeTimer=null, bgActive=false;
 
-/* ============ ELEMENT ============ */
 const clientIdEl=document.getElementById("clientId");
 const bgUrlEl=document.getElementById("bgUrl");
 const feedUrlEl=document.getElementById("feedUrl");
@@ -174,16 +159,17 @@ function trackUri(url){url=(url||"").trim();if(!url)return null;let m=url.match(
 function playlistUri(url){url=(url||"").trim();if(!url)return null;let m=url.match(/playlist[/:]([A-Za-z0-9]+)/);if(m)return"spotify:playlist:"+m[1];return null;}
 function escapeHtml(s){return(s||"").replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]));}
 function isTM(song){return/^\s*tm\s*l[\u00e5a]t/i.test((song||"").trim());}
+function norm(s){return(s||"").trim().toLowerCase();}
+function findCol(header,names){for(const n of names){const i=header.findIndex(h=>norm(h)===norm(n));if(i>=0)return i;}return -1;}
 
-/* ============ SYNKA KÖRSCHEMA ============ */
+/* ============ SYNKA ============ */
 async function sync(){
   setStatus("Hämtar körschema…",!!deviceId);
   try{
     const res=await fetch(feedUrl,{cache:"no-store"});
     const data=await res.json();
     parseFeed(data); render();
-    setStatus("Körschema uppdaterat ✓",!!deviceId);
-    setTimeout(refreshStatus,2200);
+    setStatus("Körschema uppdaterat ✓",!!deviceId); setTimeout(refreshStatus,2200);
   }catch(e){
     setStatus("Kunde inte hämta körschemat",!!deviceId);
     if(!rows.length) document.getElementById("list").innerHTML='<div class="empty">Ingen kontakt med körschemat. Kontrollera länken i Inställningar.</div>';
@@ -192,21 +178,37 @@ async function sync(){
 }
 function parseFeed(data){
   const header=data.rows.find(r=>r[0]==="Ordning");
+  if(!header){rows=[];return;}
   const startIdx=data.rows.indexOf(header)+1;
-  const col={clock:1,moment:2,speaker:3,song:8,startfrom:9};
+  const cClock=findCol(header,["Klockslag"]);
+  const cMoment=findCol(header,["Programpunkt"]);
+  const cSpeaker=findCol(header,["Talare"]);
+  const cSong=findCol(header,["Ingångslåt","Ingångslåt "]);
+  const cStart=findCol(header,["Starta låt från","Starta låt från:"]);
+  const cLink=findCol(header,["Spotify-länk","Spotifylänk","Spotify-lank","Spotifylank","Spotify länk"]);
   const out=[];
   for(let i=startIdx;i<data.rows.length;i++){
     const r=data.rows[i];
-    const moment=(r[col.moment]||"").trim();
-    const song=(r[col.song]||"").trim();
-    const clock=(r[col.clock]||"").trim();
+    const moment=(r[cMoment]||"").trim();
+    const song=(r[cSong]||"").trim();
+    const clock=(r[cClock]||"").trim();
     if(!song) continue;
     if(/^total|^antal|^v\u00e4ntar/i.test(moment)) continue;
     const key=(clock||"row"+i)+"|"+moment.slice(0,24);
-    out.push({key,clock,moment,song,speaker:(r[col.speaker]||"").trim(),startfrom:(r[col.startfrom]||"").trim(),tm:isTM(song)});
+    out.push({
+      key, clock, moment, song,
+      speaker:(cSpeaker>=0?(r[cSpeaker]||""):"").trim(),
+      sheetLink:(cLink>=0?(r[cLink]||""):"").trim(),
+      sheetTime:(cStart>=0?(r[cStart]||""):"").trim(),
+      tm:isTM(song)
+    });
   }
   rows=out;
 }
+
+/* ============ RESOLVER: ark först, reserv sedan ============ */
+function resolveLink(c){const ov=overrides[c.key]||{};return trackUri(c.sheetLink)?c.sheetLink:(ov.url||"");}
+function resolveTime(c){const ov=overrides[c.key]||{};return c.sheetTime||ov.time||"0:00";}
 
 /* ============ RENDER ============ */
 function render(){
@@ -214,77 +216,60 @@ function render(){
   if(!rows.length){list.innerHTML='<div class="empty">Tryck &#8635; Synka körschema för att hämta punkterna.</div>';return;}
   list.innerHTML="";
   rows.forEach((c,i)=>{
+    const link=resolveLink(c), time=resolveTime(c);
+    const fromSheet=!!trackUri(c.sheetLink);
+    const hasLink=!!trackUri(link);
     const ov=overrides[c.key]||{};
-    const url=ov.url||"";
-    const time=ov.time||c.startfrom||"0:00";
     const el=document.createElement("div");
     el.className="cue"+(c.tm?" tm":""); el.dataset.i=i;
+    let metaLink = hasLink
+      ? (fromSheet?'<span class="ok">&#10003; Länk från körschemat</span>':'<span class="ok">&#10003; Reservlänk</span>')
+      : '<span class="warn">&#9888; Ingen länk än</span>';
+    let metaTime = c.sheetTime ? ('Startar '+escapeHtml(c.sheetTime)+' (från arket)') : ('Startar '+escapeHtml(time));
     el.innerHTML=
       '<div class="cue-top"><div class="clock">'+escapeHtml(c.clock||"")+'</div>'+
       '<div class="fields"><div class="moment">'+escapeHtml(c.moment)+(c.tm?'<span class="tmtag">TM</span>':'')+'</div>'+
       '<div class="songname">'+escapeHtml(c.song)+(c.speaker?' — '+escapeHtml(c.speaker):'')+'</div>'+
-      '<div class="row2"><input class="url" value="'+escapeHtml(url)+'" placeholder="Spotify-låtlänk">'+
-      '<input class="time" value="'+escapeHtml(time)+'" placeholder="mm:ss" title="Starta låt från"></div></div></div>'+
-      '<div class="cue-actions"><button class="play" data-act="play">&#9654; Spela från '+escapeHtml(time)+'</button>'+
+      '<div class="meta">'+metaLink+'<span>'+metaTime+'</span></div>'+
+      (fromSheet?'':'<div class="fallback"><input class="url" value="'+escapeHtml(ov.url||"")+'" placeholder="Reserv: Spotify-låtlänk">'+
+        '<input class="time" value="'+escapeHtml(ov.time||"")+'" placeholder="mm:ss"></div>')+
+      '</div></div>'+
+      '<div class="cue-actions"><button class="play" data-act="play"'+(hasLink?'':' disabled')+'>&#9654; Spela från '+escapeHtml(time)+'</button>'+
       '<button class="mini" data-act="toggle" disabled>Pausa</button>'+
-      '<button class="mini" data-act="fade" disabled>Fade ut</button>'+
-      '<span class="badge" data-role="badge"></span></div>';
+      '<button class="mini" data-act="fade" disabled>Fade ut</button></div>';
     list.appendChild(el);
     const uI=el.querySelector(".url"), tI=el.querySelector(".time");
-    uI.oninput=()=>{overrides[c.key]=Object.assign({},overrides[c.key],{url:uI.value});validate(el,uI.value);};
-    tI.oninput=()=>{overrides[c.key]=Object.assign({},overrides[c.key],{time:tI.value});el.querySelector('[data-act=play]').innerHTML="&#9654; Spela från "+escapeHtml(tI.value||"0:00");};
+    if(uI)uI.oninput=()=>{overrides[c.key]=Object.assign({},overrides[c.key],{url:uI.value});quickRefresh(el,c);};
+    if(tI)tI.oninput=()=>{overrides[c.key]=Object.assign({},overrides[c.key],{time:tI.value});quickRefresh(el,c);};
     el.querySelector('[data-act=play]').onclick=()=>playCue(i);
     el.querySelector('[data-act=toggle]').onclick=()=>togglePause(i);
     el.querySelector('[data-act=fade]').onclick=()=>fadeOut(i);
-    validate(el,url);
   });
   markActive();
 }
-function validate(el,url){
-  const b=el.querySelector('[data-role=badge]');
-  if(!url){b.textContent="";b.className="badge";return;}
-  const ok=!!trackUri(url);
-  b.textContent=ok?"":"⚠ Känner inte igen länken";
-  b.className=ok?"badge":"badge bad";
+function quickRefresh(el,c){
+  const link=resolveLink(c), time=resolveTime(c), hasLink=!!trackUri(link);
+  const play=el.querySelector('[data-act=play]');
+  play.disabled=!hasLink; play.innerHTML="&#9654; Spela från "+escapeHtml(time);
 }
 
 /* ============ CUE-UPPSPELNING ============ */
 async function playCue(i){
-  const c=rows[i]; const ov=overrides[c.key]||{};
-  const uri=trackUri(ov.url);
+  const c=rows[i]; const uri=trackUri(resolveLink(c));
   if(!ensureReady())return;
   if(!uri){alert('"'+c.moment+'" saknar giltig Spotify-länk.');return;}
   clearFade(); bgActive=false; refreshBgUI();
   await setVolume(1);
-  const posMs=parseTime(ov.time||c.startfrom);
-  try{await apiPlay({uris:[uri],position_ms:posMs});activeCue=i;isPaused=false;markActive();}
+  try{await apiPlay({uris:[uri],position_ms:parseTime(resolveTime(c))});activeCue=i;isPaused=false;markActive();}
   catch(e){alert("Kunde inte starta: "+e.message);}
 }
-async function togglePause(){
-  if(!player)return;
-  if(isPaused){await player.resume();isPaused=false;}else{await player.pause();isPaused=true;}
-  markActive();
-}
-function fadeOut(){
-  if(!player)return; clearFade(); let step=0;
-  fadeTimer=setInterval(async()=>{
-    step++; await setVolume(Math.max(0,1-step/FADE_STEPS));
-    if(step>=FADE_STEPS){clearFade();await player.pause();isPaused=true;markActive();await setVolume(1);}
-  },FADE_MS/FADE_STEPS);
-}
+async function togglePause(){if(!player)return;if(isPaused){await player.resume();isPaused=false;}else{await player.pause();isPaused=true;}markActive();}
+function fadeOut(){if(!player)return;clearFade();let step=0;fadeTimer=setInterval(async()=>{step++;await setVolume(Math.max(0,1-step/FADE_STEPS));if(step>=FADE_STEPS){clearFade();await player.pause();isPaused=true;markActive();await setVolume(1);}},FADE_MS/FADE_STEPS);}
 function clearFade(){if(fadeTimer){clearInterval(fadeTimer);fadeTimer=null;}}
 async function setVolume(v){if(player)try{await player.setVolume(v);}catch(e){}}
-function markActive(){
-  document.querySelectorAll(".cue").forEach((el,idx)=>{
-    const on=idx===activeCue && !bgActive;
-    el.classList.toggle("active",on);
-    const t=el.querySelector('[data-act=toggle]'),f=el.querySelector('[data-act=fade]');
-    if(t)t.disabled=!on; if(f)f.disabled=!on;
-    if(t)t.textContent=on&&isPaused?"Fortsätt":"Pausa";
-  });
-}
+function markActive(){document.querySelectorAll(".cue").forEach((el,idx)=>{const on=idx===activeCue&&!bgActive;el.classList.toggle("active",on);const t=el.querySelector('[data-act=toggle]'),f=el.querySelector('[data-act=fade]');if(t)t.disabled=!on;if(f)f.disabled=!on;if(t)t.textContent=on&&isPaused?"Fortsätt":"Pausa";});}
 
-/* ============ BAKGRUNDSMUSIK ============ */
+/* ============ BAKGRUND ============ */
 async function playBackground(){
   const uri=playlistUri(bgUrl);
   if(!ensureReady())return;
@@ -293,33 +278,17 @@ async function playBackground(){
   try{
     await fetch("https://api.spotify.com/v1/me/player/shuffle?state=true&device_id="+deviceId,{method:"PUT",headers:authH()});
     const offset=Math.floor(Math.random()*40);
-    try{await apiPlay({context_uri:uri,offset:{position:offset}});}
-    catch(_){await apiPlay({context_uri:uri});}
+    try{await apiPlay({context_uri:uri,offset:{position:offset}});}catch(_){await apiPlay({context_uri:uri});}
   }catch(e){try{await apiPlay({context_uri:uri});}catch(_){}}
   bgActive=true; activeCue=null; isPaused=false; markActive(); refreshBgUI();
 }
-async function toggleBg(){
-  if(!player)return;
-  if(isPaused){await player.resume();isPaused=false;}else{await player.pause();isPaused=true;}
-  refreshBgUI();
-}
-function refreshBgUI(){
-  const b=document.getElementById("bgToggle");
-  b.disabled=!bgActive; b.textContent=isPaused?"Fortsätt":"Pausa";
-  document.getElementById("bgBtn").classList.toggle("playing",bgActive);
-}
+async function toggleBg(){if(!player)return;if(isPaused){await player.resume();isPaused=false;}else{await player.pause();isPaused=true;}refreshBgUI();}
+function refreshBgUI(){const b=document.getElementById("bgToggle");b.disabled=!bgActive;b.textContent=isPaused?"Fortsätt":"Pausa";document.getElementById("bgBtn").classList.toggle("playing",bgActive);}
 
-/* ============ SPOTIFY API ============ */
+/* ============ API ============ */
 function authH(){return{Authorization:"Bearer "+token,"Content-Type":"application/json"};}
-async function apiPlay(body){
-  const r=await fetch("https://api.spotify.com/v1/me/player/play?device_id="+deviceId,{method:"PUT",headers:authH(),body:JSON.stringify(body)});
-  if(!r.ok && r.status!==204)throw new Error("HTTP "+r.status);
-}
-function ensureReady(){
-  if(!token){document.getElementById("setup").scrollIntoView({behavior:"smooth"});alert("Anslut till Spotify först.");return false;}
-  if(!deviceId){alert("Spelaren är inte redo än — vänta någon sekund.");return false;}
-  return true;
-}
+async function apiPlay(body){const r=await fetch("https://api.spotify.com/v1/me/player/play?device_id="+deviceId,{method:"PUT",headers:authH(),body:JSON.stringify(body)});if(!r.ok&&r.status!==204)throw new Error("HTTP "+r.status);}
+function ensureReady(){if(!token){document.getElementById("setup").scrollIntoView({behavior:"smooth"});alert("Anslut till Spotify först.");return false;}if(!deviceId){alert("Spelaren är inte redo än — vänta någon sekund.");return false;}return true;}
 
 /* ============ AUTH (PKCE) ============ */
 function b64url(buf){return btoa(String.fromCharCode.apply(null,new Uint8Array(buf))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');}
@@ -329,7 +298,7 @@ async function connect(){
   clientId=clientIdEl.value.trim();
   if(!clientId){document.getElementById("setup").scrollIntoView({behavior:"smooth"});alert("Klistra in Client ID i Inställningar.");return;}
   localStorage.setItem("wed_client_id",clientId);
-  const verifier=randStr(96); localStorage.setItem("wed_verifier",verifier);
+  const verifier=randStr(96);localStorage.setItem("wed_verifier",verifier);
   const challenge=b64url(await sha256(verifier));
   window.location="https://accounts.spotify.com/authorize?"+new URLSearchParams({client_id:clientId,response_type:"code",redirect_uri:REDIRECT,scope:SCOPES,code_challenge_method:"S256",code_challenge:challenge});
 }
@@ -355,7 +324,6 @@ function initPlayer(){
   player.connect();
 }
 window.onSpotifyWebPlaybackSDKReady=function(){if(token)initPlayer();};
-
 function setStatus(txt,on){document.getElementById("status").textContent=txt;document.getElementById("dot").classList.toggle("on",!!on);}
 function refreshStatus(){setStatus(deviceId?"Ansluten — redo":(token?"Inloggad…":"Inte ansluten"),!!deviceId);}
 
@@ -369,7 +337,6 @@ document.getElementById("bgToggle").onclick=toggleBg;
 clientIdEl.oninput=function(e){localStorage.setItem("wed_client_id",e.target.value.trim());};
 bgUrlEl.oninput=function(e){bgUrl=e.target.value.trim();localStorage.setItem("wed_bg_url",bgUrl);};
 feedUrlEl.oninput=function(e){feedUrl=e.target.value.trim()||FEED_DEFAULT;localStorage.setItem("wed_feed_url",feedUrl);};
-
 (async function(){
   load();
   const ok=await handleRedirect();
