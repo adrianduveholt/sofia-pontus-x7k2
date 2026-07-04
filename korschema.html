@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#17120E">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Körschema · Sofia & Pontus</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#17120E;
+    --surface:#221B14;
+    --surface2:#2B221A;
+    --line:#3A2F24;
+    --ivory:#F3EADB;
+    --muted:#A6937D;
+    --faint:#7A6A57;
+    --gold:#D4A954;
+    --gold-deep:#B58935;
+    --late:#D07B54;
+    --early:#8FBF9A;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{background:var(--bg);color:var(--ivory);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  body{min-height:100dvh;display:flex;flex-direction:column;max-width:520px;margin:0 auto}
+  .num{font-variant-numeric:tabular-nums}
+
+  /* ---------- Header ---------- */
+  header{display:flex;justify-content:space-between;align-items:baseline;
+    padding:calc(14px + env(safe-area-inset-top)) 20px 10px}
+  header h1{font-family:"Cormorant Garamond",Georgia,serif;font-weight:600;
+    font-size:20px;letter-spacing:.04em;color:var(--gold)}
+  #clock{font-size:20px;font-weight:600;color:var(--ivory)}
+  #status{font-size:11px;color:var(--faint);padding:0 20px 6px;min-height:14px}
+  #status.err{color:var(--late)}
+
+  /* ---------- NU ---------- */
+  #nowCard{margin:4px 16px 0;padding:12px 16px;background:var(--surface);
+    border:1px solid var(--line);border-radius:12px;display:none}
+  #nowCard.visible{display:block}
+  .eyebrow{font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted)}
+  #nowName{font-size:16px;font-weight:600;margin-top:3px}
+  #nowMeta{font-size:12px;color:var(--muted);margin-top:2px}
+  #nowBar{height:3px;background:var(--line);border-radius:2px;margin-top:10px;overflow:hidden}
+  #nowFill{height:100%;background:var(--gold);width:0%;transition:width .6s ease}
+  #nowFill.over{background:var(--late)}
+
+  /* ---------- NÄSTA (signaturkortet) ---------- */
+  #nextCard{margin:14px 16px 0;padding:22px 20px 20px;text-align:center;
+    background:var(--surface);border-radius:14px;position:relative;
+    border:1px solid var(--gold-deep);box-shadow:inset 0 0 0 4px var(--surface),inset 0 0 0 5px var(--line)}
+  #nextTime{font-family:"Cormorant Garamond",Georgia,serif;font-size:52px;line-height:1;
+    font-weight:500;color:var(--gold);margin-top:8px}
+  #nextTime .orig{font-size:16px;color:var(--faint);text-decoration:line-through;
+    font-family:inherit;margin-left:8px;vertical-align:middle}
+  #nextName{font-family:"Cormorant Garamond",Georgia,serif;font-size:30px;line-height:1.15;
+    font-weight:600;margin-top:8px}
+  #nextSpeaker{font-family:"Cormorant Garamond",Georgia,serif;font-style:italic;
+    font-size:17px;color:var(--muted);margin-top:4px}
+  .tags{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:14px}
+  .tag{font-size:11.5px;padding:4px 10px;border-radius:999px;
+    background:var(--surface2);border:1px solid var(--line);color:var(--ivory)}
+  .tag.music{color:var(--gold)}
+  #nextComment{font-size:12.5px;color:var(--muted);margin-top:12px;line-height:1.45;
+    border-top:1px solid var(--line);padding-top:10px}
+  #nextComment:empty,#nextSpeaker:empty{display:none}
+
+  /* ---------- Kommande ---------- */
+  #upcoming{margin:18px 20px 0;flex:1}
+  #upcoming h2{font-size:10px;letter-spacing:.22em;text-transform:uppercase;
+    color:var(--muted);margin-bottom:8px}
+  .up-row{display:flex;gap:14px;align-items:baseline;padding:8px 0;
+    border-bottom:1px solid var(--line)}
+  .up-row:last-child{border-bottom:none}
+  .up-time{font-size:14px;font-weight:600;color:var(--muted);min-width:48px}
+  .up-name{font-size:14px;color:var(--ivory);flex:1}
+  .up-len{font-size:11px;color:var(--faint)}
+  .done-note{font-size:15px;color:var(--gold);text-align:center;padding:24px 0;
+    font-family:"Cormorant Garamond",Georgia,serif;font-style:italic}
+
+  /* ---------- Footer / sluttid + knapp ---------- */
+  footer{position:sticky;bottom:0;background:linear-gradient(transparent,var(--bg) 24%);
+    padding:18px 16px calc(14px + env(safe-area-inset-bottom))}
+  #endRow{display:flex;justify-content:space-between;align-items:baseline;
+    padding:0 6px 10px;font-size:13px;color:var(--muted)}
+  #endTime{font-size:16px;font-weight:600;color:var(--ivory)}
+  #endDiff{font-size:12px;margin-left:6px}
+  #endDiff.late{color:var(--late)} #endDiff.early{color:var(--early)}
+  #startBtn{width:100%;padding:17px;border:none;border-radius:14px;cursor:pointer;
+    background:linear-gradient(180deg,var(--gold),var(--gold-deep));color:#1A130B;
+    font-size:17px;font-weight:700;font-family:inherit;letter-spacing:.01em;
+    box-shadow:0 4px 18px rgba(212,169,84,.25)}
+  #startBtn:active{transform:scale(.985)}
+  #startBtn:disabled{opacity:.45;box-shadow:none}
+  #undoRow{text-align:center;margin-top:10px}
+  #undoBtn{background:none;border:none;color:var(--faint);font-size:12.5px;
+    text-decoration:underline;cursor:pointer;font-family:inherit;padding:4px 8px}
+  button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+  @media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Sofia &amp; Pontus</h1>
+  <div id="clock" class="num">--:--</div>
+</header>
+<div id="status">Hämtar körschema …</div>
+
+<div id="nowCard">
+  <div class="eyebrow">Pågår nu</div>
+  <div id="nowName"></div>
+  <div id="nowMeta" class="num"></div>
+  <div id="nowBar"><div id="nowFill"></div></div>
+</div>
+
+<div id="nextCard">
+  <div class="eyebrow">Nästa punkt</div>
+  <div id="nextTime" class="num"></div>
+  <div id="nextName"></div>
+  <div id="nextSpeaker"></div>
+  <div class="tags" id="nextTags"></div>
+  <div id="nextComment"></div>
+</div>
+
+<div id="upcoming">
+  <h2>Kommande</h2>
+  <div id="upList"></div>
+</div>
+
+<footer>
+  <div id="endRow">
+    <span>Beräknad sluttid</span>
+    <span><span id="endTime" class="num">–</span><span id="endDiff"></span></span>
+  </div>
+  <button id="startBtn" disabled>Laddar …</button>
+  <div id="undoRow"><button id="undoBtn" hidden>Ångra senaste start</button></div>
+</footer>
+
+<script>
+const API = "https://script.google.com/macros/s/AKfycbyet3Q39SCsgjZSU1uOUFjhdvO9MDedgkObqGRZPXb2Xmhgr12BKDn-irM3qxkTXC_o5g/exec";
+const REFRESH_MS = 45000;
+
+let items = [];        // programpunkter
+let utfallCol = 11;    // index på Utfall-kolumnen
+let busy = false;
+
+const $ = id => document.getElementById(id);
+const TIME_RE = /^\d{1,2}:\d{2}$/;
+const toMin = t => { const [h,m]=t.split(":").map(Number); return h*60+m; };
+const toHHMM = m => { m=((m%1440)+1440)%1440;
+  return String(Math.floor(m/60)).padStart(2,"0")+":"+String(m%60).padStart(2,"0"); };
+const nowMin = () => { const d=new Date(); return d.getHours()*60+d.getMinutes(); };
+const nowHHMM = () => toHHMM(nowMin());
+
+function parse(data){
+  utfallCol = data.headers.indexOf("Utfall");
+  if(utfallCol === -1) utfallCol = data.headers.length-1;
+  const rows = data.rows;
+  let hdr = rows.findIndex(r => (r[0]||"").trim() === "Ordning");
+  items = [];
+  for(let i = hdr+1; i < rows.length; i++){
+    const r = rows[i];
+    const name = (r[2]||"").trim(), time = (r[1]||"").trim();
+    if(!name || !TIME_RE.test(time)) continue;
+    items.push({
+      postRow: i+1,                    // 1-baserad datarad för doPost
+      planned: toMin(time),
+      name,
+      speaker:(r[3]||"").trim(),
+      len: parseInt(r[5],10)||0,
+      buf: parseInt(r[6],10)||0,
+      tech:(r[7]||"").trim(),
+      song:(r[8]||"").trim(),
+      comment:(r[10]||"").trim(),
+      actual: TIME_RE.test((r[utfallCol]||"").trim()) ? toMin(r[utfallCol].trim()) : null,
+      actualRaw:(r[utfallCol]||"").trim()
+    });
+  }
+}
+
+const lastStartedIdx = () => { let k=-1; items.forEach((it,i)=>{ if(it.actual!==null) k=i; }); return k; };
+const offset = () => { const k=lastStartedIdx(); return k<0 ? 0 : items[k].actual-items[k].planned; };
+const projected = i => items[i].planned + offset();
+
+function render(){
+  const k = lastStartedIdx(), off = offset(), nextIdx = k+1;
+
+  // NU
+  const nowCard = $("nowCard");
+  if(k >= 0 && nextIdx < items.length){
+    const cur = items[k], elapsed = nowMin()-cur.actual;
+    nowCard.classList.add("visible");
+    $("nowName").textContent = cur.name;
+    $("nowMeta").textContent = "Startade "+toHHMM(cur.actual)+" · "+Math.max(0,elapsed)+" av "+(cur.len||"?")+" min";
+    const pct = cur.len ? Math.min(100, elapsed/cur.len*100) : 0;
+    $("nowFill").style.width = pct+"%";
+    $("nowFill").classList.toggle("over", cur.len>0 && elapsed>cur.len);
+  } else nowCard.classList.remove("visible");
+
+  // NÄSTA + knapp
+  const btn = $("startBtn");
+  if(nextIdx < items.length){
+    const nx = items[nextIdx], proj = projected(nextIdx);
+    $("nextTime").innerHTML = '<span>'+toHHMM(proj)+'</span>' +
+      (off!==0 ? '<span class="orig num">'+toHHMM(nx.planned)+'</span>' : '');
+    $("nextName").textContent = nx.name;
+    $("nextSpeaker").textContent = nx.speaker;
+    const tags = [];
+    if(nx.song) tags.push('<span class="tag music">♪ '+esc(nx.song)+'</span>');
+    if(nx.tech) tags.push('<span class="tag">'+esc(nx.tech)+'</span>');
+    if(nx.len)  tags.push('<span class="tag num">'+nx.len+' min'+(nx.buf?' + '+nx.buf+' buffert':'')+'</span>');
+    $("nextTags").innerHTML = tags.join("");
+    $("nextComment").textContent = nx.comment;
+    btn.disabled = busy;
+    btn.textContent = busy ? "Sparar …" : "▶  Starta: "+nx.name;
+  } else {
+    $("nextTime").textContent = "🎉";
+    $("nextName").textContent = "Programmet är genomfört";
+    $("nextSpeaker").textContent = ""; $("nextTags").innerHTML = "";
+    $("nextComment").textContent = "";
+    btn.disabled = true; btn.textContent = "Allt klart – nu dansar vi";
+  }
+
+  // Kommande 5
+  const list = items.slice(nextIdx+1, nextIdx+6).map(it=>{
+    const i = items.indexOf(it);
+    return '<div class="up-row"><span class="up-time num">'+toHHMM(projected(i))+'</span>'+
+      '<span class="up-name">'+esc(it.name)+(it.speaker?' <span style="color:var(--faint)">· '+esc(it.speaker)+'</span>':'')+'</span>'+
+      (it.len?'<span class="up-len num">'+it.len+' min</span>':'')+'</div>';
+  }).join("");
+  $("upList").innerHTML = list || '<div class="done-note">Inga fler punkter efter nästa</div>';
+
+  // Sluttid
+  if(items.length){
+    const end = projected(items.length-1);
+    $("endTime").textContent = toHHMM(end);
+    const d = $("endDiff");
+    if(off > 0){ d.textContent = "+"+off+" min"; d.className = "num late"; }
+    else if(off < 0){ d.textContent = off+" min"; d.className = "num early"; }
+    else { d.textContent = ""; d.className = ""; }
+  }
+
+  $("undoBtn").hidden = (k < 0);
+}
+
+function esc(s){ return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+
+async function load(silent){
+  if(!silent) $("status").textContent = "Hämtar körschema …";
+  try{
+    const res = await fetch(API);
+    const data = await res.json();
+    parse(data); render();
+    $("status").className = "";
+    $("status").textContent = "Synkad "+nowHHMM();
+  }catch(e){
+    $("status").className = "err";
+    $("status").textContent = "Kunde inte hämta – visar senast kända. Försöker igen …";
+  }
+}
+
+async function post(row, time){
+  busy = true; render();
+  try{
+    const res = await fetch(API, {
+      method:"POST",
+      headers:{"Content-Type":"text/plain;charset=utf-8"},
+      body: JSON.stringify({row, time})
+    });
+    const data = await res.json();
+    parse(data);
+    $("status").className = "";
+    $("status").textContent = "Sparat "+nowHHMM();
+  }catch(e){
+    $("status").className = "err";
+    $("status").textContent = "Kunde inte spara – kolla nätet och försök igen.";
+  }
+  busy = false; render();
+}
+
+$("startBtn").addEventListener("click", ()=>{
+  const nextIdx = lastStartedIdx()+1;
+  if(busy || nextIdx >= items.length) return;
+  post(items[nextIdx].postRow, nowHHMM());
+});
+
+$("undoBtn").addEventListener("click", ()=>{
+  const k = lastStartedIdx();
+  if(k < 0 || busy) return;
+  if(confirm("Ångra starten av \""+items[k].name+"\"?")) post(items[k].postRow, "");
+});
+
+setInterval(()=>{ $("clock").textContent = nowHHMM(); if(items.length) render(); }, 1000);
+setInterval(()=>load(true), REFRESH_MS);
+document.addEventListener("visibilitychange", ()=>{ if(!document.hidden) load(true); });
+load(false);
+</script>
+</body>
+</html>
