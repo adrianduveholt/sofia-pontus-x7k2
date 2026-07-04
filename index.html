@@ -66,8 +66,7 @@
   .post .meta .txt { min-width: 0; }
   .like { flex: none; display: inline-flex; align-items: center; gap: 4px; border: 0; background: none; cursor: pointer; padding: 4px 6px; border-radius: 999px; font-family: 'Inter'; font-weight: 600; font-size: .82rem; color: var(--rose); transition: transform .1s; }
   .like:active { transform: scale(.85); }
-  .like .heart { font-size: 1.05rem; line-height: 1; filter: grayscale(1) opacity(.55); transition: filter .15s; }
-  .like.liked .heart { filter: none; }
+  .like .heart { font-size: 1.05rem; line-height: 1; }
   .like.liked { color: #c0392b; }
   .wall-empty { text-align: center; color: #9b8d79; padding: 40px 0; grid-column: 1 / -1; }
   .toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%) translateY(20px); background: var(--ink); color: #fff; padding: 12px 18px; border-radius: 999px; font-size: .9rem; opacity: 0; transition: all .3s; pointer-events: none; z-index: 50; }
@@ -182,7 +181,7 @@
       const liked = likedSet.has(f.id);
       post.innerHTML = '<img src="' + f.url + '" loading="lazy"><div class="meta">' +
         '<div class="txt"><div class="t">' + (TASKS[f.taskIndex] || '') + '</div><div class="b">Bord ' + f.table + '</div></div>' +
-        '<button class="like' + (liked ? ' liked' : '') + '" data-id="' + f.id + '"><span class="heart">\u2764\uFE0F</span><span class="n">' + (f.likes || 0) + '</span></button>' +
+        '<button class="like' + (liked ? ' liked' : '') + '" data-id="' + f.id + '"><span class="heart">' + (liked ? '\u2764\uFE0F' : '\uD83E\uDD0D') + '</span><span class="n">' + (f.likes || 0) + '</span></button>' +
         '</div>';
       post.querySelector('.like').addEventListener('click', ev => toggleLike(ev.currentTarget, f));
       grid.appendChild(post);
@@ -193,7 +192,13 @@
     try {
       const res = await fetch(API_URL + '?action=list'); const out = await res.json();
       if (Array.isArray(out.items)) {
-        feed = out.items;
+        // Behåll lokala likes-värden på bilder jag precis gillat, så räknaren inte studsar
+        const localLikes = {};
+        feed.forEach(f => { if (likedSet.has(f.id)) localLikes[f.id] = f.likes; });
+        feed = out.items.map(f => {
+          if (likedSet.has(f.id) && localLikes[f.id] != null) f.likes = Math.max(f.likes || 0, localLikes[f.id]);
+          return f;
+        });
         if (document.getElementById('view-wall').classList.contains('active')) renderWall();
         if (document.getElementById('view-card').classList.contains('active')) renderCard();
       }
@@ -205,13 +210,16 @@
   async function toggleLike(btn, f) {
     const willLike = !likedSet.has(f.id);
     const nEl = btn.querySelector('.n');
+    const heartEl = btn.querySelector('.heart');
     // optimistisk UI
-    if (willLike) { likedSet.add(f.id); btn.classList.add('liked'); f.likes = (f.likes||0)+1; }
-    else { likedSet.delete(f.id); btn.classList.remove('liked'); f.likes = Math.max(0,(f.likes||0)-1); }
+    if (willLike) { likedSet.add(f.id); btn.classList.add('liked'); heartEl.textContent = '\u2764\uFE0F'; f.likes = (f.likes||0)+1; }
+    else { likedSet.delete(f.id); btn.classList.remove('liked'); heartEl.textContent = '\uD83E\uDD0D'; f.likes = Math.max(0,(f.likes||0)-1); }
     nEl.textContent = f.likes; saveLiked();
     if (!API_URL) return;
     try {
-      await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'like', imageId: f.id, delta: willLike ? 1 : -1 }) });
+      const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'like', imageId: f.id, delta: willLike ? 1 : -1 }) });
+      const out = await res.json();
+      if (out && typeof out.likes === 'number') { f.likes = out.likes; nEl.textContent = out.likes; }
     } catch (e) { /* tyst; nästa poll rättar */ }
   }
   function startPolling() { stopPolling(); pollTimer = setInterval(refreshFeed, POLL_MS); }
