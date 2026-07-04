@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sofia &amp; Pontus — Poängställning</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root { --ink:#2b2118; --paper:#f6efe3; --card:#fffdf8; --plum:#6e3b4e; --rose:#c97b6b; --gold:#c4a35a; --leaf:#6f7d5a; --line:#e3d6c2; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family:'Inter',system-ui,sans-serif; color:var(--ink);
+    background: radial-gradient(130% 90% at 50% -10%, #fbf6ec 0%, var(--paper) 55%) fixed;
+    min-height:100vh; padding: 3vh 3vw; }
+  header { text-align:center; margin-bottom: 2.5vh; }
+  .eyebrow { font-size:1rem; letter-spacing:.4em; text-transform:uppercase; color:var(--rose); font-weight:700; }
+  h1 { font-family:'Fraunces',serif; font-weight:700; font-size: clamp(2.4rem, 5vw, 4rem); color:var(--plum); line-height:1; margin-top:.1em; }
+  .layout { display:grid; grid-template-columns: 1.3fr 1fr; gap: 3vw; align-items:start; }
+  @media (max-width: 900px){ .layout{ grid-template-columns:1fr; } }
+  .panel-title { font-family:'Fraunces',serif; font-weight:600; font-size: clamp(1.3rem,2.5vw,2rem); color:var(--plum); margin-bottom:1.5vh; display:flex; align-items:center; gap:.5em; }
+  /* leaderboard */
+  .row { display:flex; align-items:center; gap:18px; background:var(--card); border:1px solid var(--line); border-radius:18px; padding:14px 20px; margin-bottom:12px; box-shadow:0 6px 20px rgba(43,33,24,.07); transition: all .5s ease; }
+  .row .rank { font-family:'Fraunces',serif; font-weight:700; font-size: clamp(1.4rem,3vw,2.2rem); color:var(--rose); width:1.6em; text-align:center; flex:none; }
+  .row .who { flex:1; min-width:0; }
+  .row .who .name { font-weight:700; font-size: clamp(1.1rem,2.2vw,1.6rem); color:var(--plum); }
+  .row .who .detail { font-size: clamp(.78rem,1.4vw,.95rem); color:#6b5d4c; margin-top:2px; }
+  .row .pts { font-family:'Fraunces',serif; font-weight:700; font-size: clamp(1.4rem,3vw,2.4rem); color:var(--plum); flex:none; }
+  .row .pts small { font-size:.5em; font-weight:600; color:var(--rose); display:block; text-align:right; letter-spacing:.1em; text-transform:uppercase; }
+  .row.top1 { background: linear-gradient(100deg,#fff7e6,#fffdf8); border-color: var(--gold); }
+  .row.top1 .rank { color: var(--gold); }
+  .badge-full { font-size:.7em; background:var(--leaf); color:#fff; padding:2px 9px; border-radius:999px; font-weight:700; letter-spacing:.05em; margin-left:8px; vertical-align:middle; }
+  /* top photos */
+  .photos { display:grid; grid-template-columns: repeat(2,1fr); gap:14px; }
+  .ph { background:var(--card); border:1px solid var(--line); border-radius:16px; overflow:hidden; box-shadow:0 6px 20px rgba(43,33,24,.07); position:relative; }
+  .ph img { width:100%; aspect-ratio:1; object-fit:cover; display:block; }
+  .ph .lk { position:absolute; top:8px; right:8px; background:rgba(43,33,24,.78); color:#fff; font-weight:700; font-size:.85rem; padding:4px 10px; border-radius:999px; }
+  .ph .cap { padding:7px 10px; font-size:.8rem; }
+  .ph .cap .t { font-weight:600; color:var(--plum); }
+  .ph .cap .b { color:var(--rose); font-size:.72rem; text-transform:uppercase; letter-spacing:.06em; }
+  .empty { color:#9b8d79; padding:30px 0; text-align:center; }
+  .pulse { position:fixed; bottom:2vh; right:2vw; font-size:.8rem; color:#bcae9c; }
+</style>
+</head>
+<body>
+  <header>
+    <div class="eyebrow">Fotobingo</div>
+    <h1>Poängställning</h1>
+  </header>
+  <div class="layout">
+    <section>
+      <div class="panel-title">&#x1F3C6; Bord f&ouml;r bord</div>
+      <div id="board"><p class="empty">V&auml;ntar p&aring; po&auml;ng&hellip;</p></div>
+    </section>
+    <section>
+      <div class="panel-title">&#x2764;&#xFE0F; Mest gillade</div>
+      <div id="photos" class="photos"><p class="empty">Inga bilder &auml;n</p></div>
+    </section>
+  </div>
+  <div class="pulse" id="pulse">&#x1F504; uppdaterar var 10:e sekund</div>
+<script>
+  // Samma /exec-URL som i index.html:
+  const API_URL = "https://script.google.com/macros/s/AKfycbxjEqRr31CFsAwB9hLCFS3oQV7oQoWjGT4O6J7HEL-kU3N7Mnh1yC4hlMxFm0_VmcX0/exec";
+  const TASKS = [
+    "En selfie med brudparet","N\u00e5gon i bl\u00e5tt","En sk\u00e5l \ud83e\udd42","Tv\u00e5 som skrattar",
+    "De finaste skorna","En kram","Dansgolvet","N\u00e5got gammalt","En hemlig blick",
+    "Bordets vackraste detalj","Tre generationer","En kyss"
+  ];
+  const POLL_MS = 10000;
+
+  async function refresh() {
+    try {
+      const res = await fetch(API_URL + '?action=score');
+      const out = await res.json();
+      if (out.scores) renderBoard(out.scores);
+      if (out.items) renderPhotos(out.items);
+    } catch (e) {}
+  }
+  function renderBoard(scores) {
+    const el = document.getElementById('board');
+    if (!scores.length) { el.innerHTML = '<p class="empty">V\u00e4ntar p\u00e5 po\u00e4ng\u2026</p>'; return; }
+    el.innerHTML = '';
+    scores.forEach((s, i) => {
+      const row = document.createElement('div');
+      row.className = 'row' + (i === 0 ? ' top1' : '');
+      row.innerHTML =
+        '<div class="rank">' + (i+1) + '</div>' +
+        '<div class="who"><div class="name">Bord ' + s.table +
+          (s.full ? '<span class="badge-full">FULL BRICKA</span>' : '') + '</div>' +
+        '<div class="detail">' + s.likes + ' likes &middot; ' + s.solved + '/' + TASKS.length + ' uppgifter</div></div>' +
+        '<div class="pts">' + s.points + '<small>po\u00e4ng</small></div>';
+      el.appendChild(row);
+    });
+  }
+  function renderPhotos(items) {
+    const el = document.getElementById('photos');
+    const top = items.slice().sort((a,b) => (b.likes||0)-(a.likes||0)).filter(x => (x.likes||0) > 0).slice(0,4);
+    if (!top.length) { el.innerHTML = '<p class="empty">Inga likes \u00e4n</p>'; return; }
+    el.innerHTML = '';
+    top.forEach(f => {
+      const ph = document.createElement('div'); ph.className = 'ph';
+      ph.innerHTML = '<img src="' + f.url + '"><div class="lk">\\u2764\\uFE0F ' + (f.likes||0) + '</div>' +
+        '<div class="cap"><div class="t">' + (TASKS[f.taskIndex]||'') + '</div><div class="b">Bord ' + f.table + '</div></div>';
+      el.appendChild(ph);
+    });
+  }
+  refresh();
+  setInterval(refresh, POLL_MS);
+</script>
+</body>
+</html>
