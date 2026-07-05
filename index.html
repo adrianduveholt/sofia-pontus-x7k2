@@ -174,11 +174,23 @@
     if (!API_URL) { toast('Demo-l\u00e4ge: ingen server kopplad \u00e4n'); labelEl.classList.remove('pending'); return; }
     try {
       const dataUrl = await fileToDataUrl(file);
-      const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ table, taskIndex, task: TASKS[taskIndex], image: dataUrl, filename: file.name }) });
+      const res = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ table, taskIndex, task: TASKS[taskIndex], image: dataUrl, filename: file.name })
+      });
       const out = await res.json();
-      if (out.url) { feed.push({ table, taskIndex, url: out.url, ts: Date.now() }); }
-      labelEl.classList.remove('pending'); toast('Bidrag tillagt! \ud83c\udf89');
-    } catch (err) { labelEl.classList.remove('pending'); toast('N\u00e5got gick fel \u2014 f\u00f6rs\u00f6k igen'); }
+      if (out && out.ok && out.url) {
+        feed.push({ id: out.id, table, taskIndex, url: out.url, ts: Date.now() });
+        labelEl.classList.remove('pending'); toast('Bidrag tillagt! \ud83c\udf89');
+      } else {
+        labelEl.classList.remove('pending', 'done'); labelEl.querySelector('img') && labelEl.querySelector('img').remove();
+        toast('Uppladdning misslyckades: ' + ((out && out.error) || 'ok\u00e4nt fel'));
+      }
+    } catch (err) {
+      labelEl.classList.remove('pending', 'done'); labelEl.querySelector('img') && labelEl.querySelector('img').remove();
+      toast('N\u00e5got gick fel \u2014 f\u00f6rs\u00f6k igen');
+    }
   }
   function fileToDataUrl(file) { return new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = rej; r.readAsDataURL(file); }); }
   function openWall() { show('wall'); renderWall(); refreshFeed(); startPolling(); }
