@@ -34,7 +34,6 @@
   .photos { display:grid; grid-template-columns: repeat(2,1fr); gap:14px; }
   .ph { background:var(--card); border:1px solid var(--line); border-radius:16px; overflow:hidden; box-shadow:0 6px 20px rgba(43,33,24,.07); position:relative; }
   .ph img { width:100%; aspect-ratio:1; object-fit:cover; display:block; }
-  .ph .lk { position:absolute; top:8px; right:8px; background:rgba(43,33,24,.78); color:#fff; font-weight:700; font-size:.85rem; padding:4px 10px; border-radius:999px; }
   .ph .cap { padding:7px 10px; font-size:.8rem; }
   .ph .cap .t { font-weight:600; color:var(--plum); }
   .ph .cap .b { color:var(--rose); font-size:.72rem; text-transform:uppercase; letter-spacing:.06em; }
@@ -53,7 +52,7 @@
       <div id="board"><p class="empty">V&auml;ntar p&aring; po&auml;ng&hellip;</p></div>
     </section>
     <section>
-      <div class="panel-title">&#x2764;&#xFE0F; Mest gillade</div>
+      <div class="panel-title">&#x1F4F8; Från kvällen</div>
       <div id="photos" class="photos"><p class="empty">Inga bilder &auml;n</p></div>
     </section>
   </div>
@@ -87,23 +86,29 @@
         '<div class="rank">' + (i+1) + '</div>' +
         '<div class="who"><div class="name">Bord ' + s.table +
           (s.full ? '<span class="badge-full">FULL BRICKA</span>' : '') + '</div>' +
-        '<div class="detail">' + s.likes + ' likes &middot; ' + s.solved + '/' + TASKS.length + ' uppgifter</div></div>' +
+        '<div class="detail">' + s.solved + '/' + TASKS.length + ' uppgifter lösta</div></div>' +
         '<div class="pts">' + s.points + '<small>po\u00e4ng</small></div>';
       el.appendChild(row);
     });
   }
-  function renderPhotos(items) {
+  let allItems = [];
+  function renderPhotos(items) { allItems = items || []; drawRandomPhotos(); }
+  function drawRandomPhotos() {
     const el = document.getElementById('photos');
-    const top = items.slice().sort((a,b) => (b.likes||0)-(a.likes||0)).filter(x => (x.likes||0) > 0).slice(0,4);
-    if (!top.length) { el.innerHTML = '<p class="empty">Inga likes \u00e4n</p>'; return; }
+    if (!allItems.length) { el.innerHTML = '<p class="empty">Inga bilder \u00e4n</p>'; return; }
+    const pool = allItems.slice();
+    for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(Math.random()*(i+1)); [pool[i],pool[j]]=[pool[j],pool[i]]; }
+    const pick = pool.slice(0, 4);
     el.innerHTML = '';
-    top.forEach(f => {
+    pick.forEach(f => {
       const ph = document.createElement('div'); ph.className = 'ph';
-      ph.innerHTML = '<img src="' + f.url + '"><div class="lk">\\u2764\\uFE0F ' + (f.likes||0) + '</div>' +
+      ph.innerHTML = '<img src="' + f.url + '">' +
         '<div class="cap"><div class="t">' + (TASKS[f.taskIndex]||'') + '</div><div class="b">Bord ' + f.table + '</div></div>';
       el.appendChild(ph);
     });
   }
+  // Rotera de slumpade bilderna var 6:e sekund (oberoende av datahämtningen)
+  setInterval(drawRandomPhotos, 6000);
   refresh();
   setInterval(refresh, POLL_MS);
 </script>

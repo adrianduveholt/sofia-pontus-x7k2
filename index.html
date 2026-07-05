@@ -36,6 +36,18 @@
   .tables { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
   .tile { aspect-ratio: 1; border: 0; cursor: pointer; border-radius: 18px; background: var(--card); box-shadow: var(--shadow); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; transition: transform .12s ease; border: 1px solid var(--line); }
   .tile:active { transform: scale(.95); }
+  .tile.full { background: linear-gradient(135deg,#fff7e6,#fffdf8); border-color: var(--gold); box-shadow: 0 0 0 2px var(--gold), var(--shadow); }
+  .tile.full .num { color: var(--gold); }
+  .tile.full::after { content: "\2605 KLAR"; position: absolute; top: 6px; right: 8px; font-size: .52rem; font-weight: 700; letter-spacing: .08em; color: var(--gold); }
+  .tile { position: relative; }
+  #celebrate { position: fixed; inset: 0; z-index: 100; display: none; align-items: center; justify-content: center; pointer-events: none; overflow: hidden; }
+  #celebrate.show { display: flex; }
+  #celebrate .cel-card { background: rgba(43,33,24,.92); color: #fff; padding: 26px 34px; border-radius: 22px; text-align: center; animation: pop .5s cubic-bezier(.2,1.4,.4,1) both; box-shadow: 0 20px 60px rgba(0,0,0,.4); }
+  #celebrate .cel-emoji { font-size: 3rem; }
+  #celebrate .cel-text { font-family: 'Fraunces', serif; font-weight: 600; font-size: 1.5rem; color: #f4d27a; margin-top: 6px; }
+  @keyframes pop { from { transform: scale(.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .confetti { position: fixed; top: -20px; width: 10px; height: 14px; border-radius: 2px; opacity: .9; animation: fall 3.6s linear forwards; }
+  @keyframes fall { to { transform: translateY(110vh) rotate(600deg); opacity: 1; } }
   .tile .num { font-family: 'Fraunces', serif; font-size: 2rem; font-weight: 600; color: var(--plum); line-height: 1; }
   .tile .lbl { font-size: .66rem; letter-spacing: .12em; text-transform: uppercase; color: var(--rose); }
   .topbar { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
@@ -62,12 +74,7 @@
   .post .meta { padding: 8px 10px; }
   .post .meta .t { font-size: .76rem; font-weight: 600; color: var(--plum); line-height: 1.25; }
   .post .meta .b { font-size: .66rem; letter-spacing: .08em; text-transform: uppercase; color: var(--rose); margin-top: 2px; }
-  .post .meta { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-  .post .meta .txt { min-width: 0; }
-  .like { flex: none; display: inline-flex; align-items: center; gap: 4px; border: 0; background: none; cursor: pointer; padding: 4px 6px; border-radius: 999px; font-family: 'Inter'; font-weight: 600; font-size: .82rem; color: var(--rose); transition: transform .1s; }
-  .like:active { transform: scale(.85); }
-  .like .heart { font-size: 1.05rem; line-height: 1; }
-  .like.liked { color: #c0392b; }
+
   .wall-empty { text-align: center; color: #9b8d79; padding: 40px 0; grid-column: 1 / -1; }
   .toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%) translateY(20px); background: var(--ink); color: #fff; padding: 12px 18px; border-radius: 999px; font-size: .9rem; opacity: 0; transition: all .3s; pointer-events: none; z-index: 50; }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
@@ -99,6 +106,7 @@
   </section>
 </div>
 <div id="toast" class="toast"></div>
+<div id="celebrate"><div class="cel-card"><div class="cel-emoji">&#x1F389;</div><div class="cel-text"></div></div></div>
 <script>
   // ============ KONFIGURATION ============
   const API_URL = "https://script.google.com/macros/s/AKfycbxjEqRr31CFsAwB9hLCFS3oQV7oQoWjGT4O6J7HEL-kU3N7Mnh1yC4hlMxFm0_VmcX0/exec"; // klistra in Apps Script /exec-URL efter deploy
@@ -117,7 +125,9 @@
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
     document.getElementById('view-' + name).classList.add('active');
     window.scrollTo(0, 0);
-    if (name !== 'wall') stopPolling();
+    if (name === 'landing') { stopPolling(); }
+    else { refreshFeed(); startPolling(); }
+    if (name === 'tables') markFullTablesInPicker();
   }
   function toast(msg) {
     const t = document.getElementById('toast'); t.innerHTML = msg; t.classList.add('show');
@@ -125,7 +135,7 @@
   }
   const tableGrid = document.getElementById('tableGrid');
   for (let i = 1; i <= NUM_TABLES; i++) {
-    const b = document.createElement('button'); b.className = 'tile';
+    const b = document.createElement('button'); b.className = 'tile'; b.dataset.table = i;
     b.innerHTML = '<span class="num">' + i + '</span><span class="lbl">Bord</span>';
     b.onclick = () => openCard(i); tableGrid.appendChild(b);
   }
@@ -178,12 +188,7 @@
     grid.innerHTML = '';
     feed.slice().reverse().forEach(f => {
       const post = document.createElement('div'); post.className = 'post';
-      const liked = likedSet.has(f.id);
-      post.innerHTML = '<img src="' + f.url + '" loading="lazy"><div class="meta">' +
-        '<div class="txt"><div class="t">' + (TASKS[f.taskIndex] || '') + '</div><div class="b">Bord ' + f.table + '</div></div>' +
-        '<button class="like' + (liked ? ' liked' : '') + '" data-id="' + f.id + '"><span class="heart">' + (liked ? '\u2764\uFE0F' : '\uD83E\uDD0D') + '</span><span class="n">' + (f.likes || 0) + '</span></button>' +
-        '</div>';
-      post.querySelector('.like').addEventListener('click', ev => toggleLike(ev.currentTarget, f));
+      post.innerHTML = '<img src="' + f.url + '" loading="lazy"><div class="meta"><div class="t">' + (TASKS[f.taskIndex] || '') + '</div><div class="b">Bord ' + f.table + '</div></div>';
       grid.appendChild(post);
     });
   }
@@ -192,35 +197,57 @@
     try {
       const res = await fetch(API_URL + '?action=list'); const out = await res.json();
       if (Array.isArray(out.items)) {
-        // Behåll lokala likes-värden på bilder jag precis gillat, så räknaren inte studsar
-        const localLikes = {};
-        feed.forEach(f => { if (likedSet.has(f.id)) localLikes[f.id] = f.likes; });
-        feed = out.items.map(f => {
-          if (likedSet.has(f.id) && localLikes[f.id] != null) f.likes = Math.max(f.likes || 0, localLikes[f.id]);
-          return f;
-        });
+        feed = out.items;
+        updateFullTables();
         if (document.getElementById('view-wall').classList.contains('active')) renderWall();
         if (document.getElementById('view-card').classList.contains('active')) renderCard();
+        if (document.getElementById('view-tables').classList.contains('active')) markFullTablesInPicker();
       }
     } catch (e) {}
   }
-  const LIKED_KEY = 'fotobingo_liked';
-  let likedSet = new Set(JSON.parse(localStorage.getItem(LIKED_KEY) || '[]'));
-  function saveLiked() { localStorage.setItem(LIKED_KEY, JSON.stringify([...likedSet])); }
-  async function toggleLike(btn, f) {
-    const willLike = !likedSet.has(f.id);
-    const nEl = btn.querySelector('.n');
-    const heartEl = btn.querySelector('.heart');
-    // optimistisk UI
-    if (willLike) { likedSet.add(f.id); btn.classList.add('liked'); heartEl.textContent = '\u2764\uFE0F'; f.likes = (f.likes||0)+1; }
-    else { likedSet.delete(f.id); btn.classList.remove('liked'); heartEl.textContent = '\uD83E\uDD0D'; f.likes = Math.max(0,(f.likes||0)-1); }
-    nEl.textContent = f.likes; saveLiked();
-    if (!API_URL) return;
-    try {
-      const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'like', imageId: f.id, delta: willLike ? 1 : -1 }) });
-      const out = await res.json();
-      if (out && typeof out.likes === 'number') { f.likes = out.likes; nEl.textContent = out.likes; }
-    } catch (e) { /* tyst; nästa poll rättar */ }
+  // ---- Fulla bord: beräkning, markering och firande ----
+  let fullTables = new Set();
+  let celebrated = new Set(JSON.parse(localStorage.getItem('fotobingo_celebrated') || '[]'));
+  function computeFull() {
+    const solved = {};
+    feed.forEach(f => { (solved[f.table] = solved[f.table] || new Set()).add(f.taskIndex); });
+    const s = new Set();
+    Object.keys(solved).forEach(t => { if (solved[t].size >= TASKS.length) s.add(String(t)); });
+    return s;
+  }
+  function updateFullTables() {
+    const prev = fullTables;
+    fullTables = computeFull();
+    // Nyss blivet fullt (som vi inte firat än)?
+    fullTables.forEach(t => {
+      if (!prev.has(t) && !celebrated.has(t)) {
+        celebrated.add(t); localStorage.setItem('fotobingo_celebrated', JSON.stringify([...celebrated]));
+        celebrate(t);
+      }
+    });
+    markFullTablesInPicker();
+  }
+  function markFullTablesInPicker() {
+    document.querySelectorAll('#tableGrid .tile').forEach(tile => {
+      tile.classList.toggle('full', fullTables.has(String(tile.dataset.table)));
+    });
+  }
+  function celebrate(tableNo) {
+    const layer = document.getElementById('celebrate');
+    layer.querySelector('.cel-text').textContent = 'Bord ' + tableNo + ' har klarat bingo!';
+    layer.classList.add('show');
+    // konfetti
+    const colors = ['#c4a35a','#6e3b4e','#c97b6b','#6f7d5a','#f4d27a'];
+    for (let i = 0; i < 90; i++) {
+      const c = document.createElement('span'); c.className = 'confetti';
+      c.style.left = Math.random()*100 + 'vw';
+      c.style.background = colors[i % colors.length];
+      c.style.animationDelay = (Math.random()*0.6) + 's';
+      c.style.transform = 'rotate(' + (Math.random()*360) + 'deg)';
+      layer.appendChild(c);
+      setTimeout(() => c.remove(), 4000);
+    }
+    setTimeout(() => layer.classList.remove('show'), 4200);
   }
   function startPolling() { stopPolling(); pollTimer = setInterval(refreshFeed, POLL_MS); }
   function stopPolling() { if (pollTimer) clearInterval(pollTimer); pollTimer = null; }
