@@ -119,7 +119,7 @@
   ];
   const POLL_MS = 4000;
   // =======================================
-  let currentTable = null, lastView = 'landing', pollTimer = null, feed = [];
+  let currentTable = null, lastView = 'landing', pollTimer = null, feed = [], pendingUploads = [];
   function show(name) {
     if (name !== 'wall') lastView = name;
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
@@ -153,27 +153,28 @@
       input.type = 'file'; input.accept = 'image/*'; input.setAttribute('capture', 'environment');
       const taskEl = document.createElement('span'); taskEl.className = 'task'; taskEl.textContent = task;
       label.appendChild(taskEl); label.insertAdjacentHTML('beforeend', camIcon); label.appendChild(input);
-      const matches = feed.filter(f => f.table === currentTable && f.taskIndex === idx).sort((a,b) => b.ts - a.ts);
+      const matches = feed.concat(pendingUploads).filter(f => f.table === currentTable && f.taskIndex === idx).sort((a,b) => b.ts - a.ts);
       if (matches.length) {
         const img = document.createElement('img'); img.src = matches[0].url; label.appendChild(img); label.classList.add('done');
+        if (matches[0].pending) label.classList.add('pending');
         const ban = document.createElement('span'); ban.className = 'banner'; ban.textContent = task; label.appendChild(ban);
         if (matches.length > 1) { const c = document.createElement('span'); c.className = 'count'; c.textContent = '+' + (matches.length - 1); label.appendChild(c); }
       }
       input.addEventListener('change', e => {
         const file = e.target.files && e.target.files[0]; if (!file) return;
-        const img = document.createElement('img'); img.src = URL.createObjectURL(file);
-        label.querySelector('img') && label.querySelector('img').remove();
-        label.appendChild(img); label.classList.add('done', 'pending');
-        if (!label.querySelector('.banner')) { const ban = document.createElement('span'); ban.className = 'banner'; ban.textContent = task; label.appendChild(ban); }
-        uploadPhoto(file, currentTable, idx, label);
+        const pendingItem = { table: currentTable, taskIndex: idx, url: URL.createObjectURL(file), ts: Date.now(), pending: true };
+        pendingUploads.push(pendingItem);
+        renderCard();
+        toast('Skickar\u2026 \ud83d\udce4');
+        uploadPhoto(file, currentTable, idx, pendingItem);
       });
       grid.appendChild(label);
     });
   }
-  async function uploadPhoto(file, table, taskIndex, labelEl) {
-    if (!API_URL) { toast('Demo-l\u00e4ge: ingen server kopplad \u00e4n'); labelEl.classList.remove('pending'); return; }
+  async function uploadPhoto(file, table, taskIndex, pendingItem) {
+    if (!API_URL) { toast('Demo-l\u00e4ge: ingen server kopplad \u00e4n'); removePending(pendingItem); return; }
     try {
-      const dataUrl = await fileToDataUrl(file);
+      const dataUrl = await compressImage(file);
       const res = await fetch(API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -182,14 +183,38 @@
       const out = await res.json();
       if (out && out.ok && out.url) {
         feed.push({ id: out.id, table, taskIndex, url: out.url, ts: Date.now() });
-        labelEl.classList.remove('pending'); toast('Bidrag tillagt! \ud83c\udf89');
+        removePending(pendingItem, true); toast('Bidrag tillagt! \ud83c\udf89');
       } else {
-        labelEl.classList.remove('pending', 'done'); labelEl.querySelector('img') && labelEl.querySelector('img').remove();
+        removePending(pendingItem);
         toast('Uppladdning misslyckades: ' + ((out && out.error) || 'ok\u00e4nt fel'));
       }
     } catch (err) {
-      labelEl.classList.remove('pending', 'done'); labelEl.querySelector('img') && labelEl.querySelector('img').remove();
+      removePending(pendingItem);
       toast('N\u00e5got gick fel \u2014 f\u00f6rs\u00f6k igen');
+    }
+  }
+  function removePending(item, keepUrl) {
+    pendingUploads = pendingUploads.filter(p => p !== item);
+    if (!keepUrl) URL.revokeObjectURL(item.url);
+    if (document.getElementById('view-card').classList.contains('active')) renderCard();
+  }
+  // Skala ner till max 1600 px och JPEG ~0.82 f\u00f6re uppladdning (10\u201320x mindre payload).
+  // Faller tillbaka p\u00e5 originalet om n\u00e5got g\u00e5r fel.
+  async function compressImage(file) {
+    const MAX = 2048, QUALITY = 0.85;
+    try {
+      if (file.size < 300 * 1024) return await fileToDataUrl(file);
+      const objUrl = URL.createObjectURL(file);
+      const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = objUrl; });
+      const scale = Math.min(1, MAX / Math.max(img.naturalWidth, img.naturalHeight));
+      const w = Math.round(img.naturalWidth * scale), h = Math.round(img.naturalHeight * scale);
+      const canvas = document.createElement('canvas'); canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      URL.revokeObjectURL(objUrl);
+      const out = canvas.toDataURL('image/jpeg', QUALITY);
+      return (out && out.length > 100) ? out : await fileToDataUrl(file);
+    } catch (e) {
+      return await fileToDataUrl(file);
     }
   }
   function fileToDataUrl(file) { return new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = rej; r.readAsDataURL(file); }); }
@@ -266,4 +291,3 @@
 </script>
 </body>
 </html>
-
