@@ -40,6 +40,18 @@
   .tile.full .num { color: var(--gold); }
   .tile.full::after { content: "\2605 KLAR"; position: absolute; top: 6px; right: 8px; font-size: .52rem; font-weight: 700; letter-spacing: .08em; color: var(--gold); }
   .tile { position: relative; }
+  .tile.haspic { background-position: center; background-size: cover; }
+  .tile.haspic .num, .tile.haspic .lbl { color: #fff; text-shadow: 0 1px 10px rgba(0,0,0,.65); }
+  .extra-actions { display: flex; gap: 10px; margin-top: 14px; }
+  .extra-actions label { flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer; font-size: .88rem; font-weight: 600; padding: 13px 10px; border-radius: 999px; background: transparent; color: var(--plum); border: 1.5px solid var(--line); box-shadow: none; }
+  .extra-actions label:active { transform: scale(.97); }
+  .extra-actions input { display: none; }
+  #lightbox { position: fixed; inset: 0; z-index: 200; background: rgba(30,22,15,.92); display: none; align-items: center; justify-content: center; padding: 4vw; }
+  #lightbox.show { display: flex; }
+  #lightbox img { max-width: 100%; max-height: 82vh; border-radius: 14px; box-shadow: 0 24px 80px rgba(0,0,0,.5); }
+  #lightbox .lb-cap { position: fixed; bottom: 4vh; left: 0; right: 0; text-align: center; color: #f4e9d8; font-size: .9rem; padding: 0 6vw; }
+  #lightbox .lb-cap .b { color: #d9a68f; font-size: .74rem; letter-spacing: .1em; text-transform: uppercase; margin-top: 3px; }
+  #lightbox .lb-close { position: fixed; top: 14px; right: 14px; width: 44px; height: 44px; border-radius: 50%; border: 0; background: rgba(255,255,255,.14); color: #fff; font-size: 1.4rem; cursor: pointer; line-height: 1; }
   #celebrate { position: fixed; inset: 0; z-index: 100; display: none; align-items: center; justify-content: center; pointer-events: none; overflow: hidden; }
   #celebrate.show { display: flex; }
   #celebrate .cel-card { background: rgba(43,33,24,.92); color: #fff; padding: 26px 34px; border-radius: 22px; text-align: center; animation: pop .5s cubic-bezier(.2,1.4,.4,1) both; box-shadow: 0 20px 60px rgba(0,0,0,.4); }
@@ -98,13 +110,21 @@
   <section id="view-card" class="view">
     <div class="topbar"><button class="back" onclick="show('tables')">&larr;</button><span class="ttl" id="cardTitle">Bord</span><button class="wall-link" onclick="openWall()">V&auml;ggen &rarr;</button></div>
     <div id="bingoGrid" class="grid"></div>
+    <div class="extra-actions">
+      <label>&#x1F4F7; Ta en bordsbild<input type="file" accept="image/*" capture="environment" onchange="uploadExtra(this, 100)"></label>
+      <label>&#x2728; Spontanbild<input type="file" accept="image/*" capture="environment" onchange="uploadExtra(this, 101)"></label>
+    </div>
     <p class="footnote">Tryck p&aring; en ruta &rarr; kameran &ouml;ppnas &rarr; fotot fyller brickan och hamnar p&aring; v&auml;ggen.<br>Ta g&auml;rna <strong>flera bilder p&aring; samma uppgift</strong> &mdash; ju fler desto roligare!</p>
   </section>
   <section id="view-wall" class="view">
     <div class="topbar"><button class="back" onclick="show(lastView)">&larr;</button><span class="ttl">Bildv&auml;ggen</span></div>
     <div id="wallGrid" class="wall"></div>
+    <div class="extra-actions">
+      <label>&#x2728; Ta en spontanbild<input type="file" accept="image/*" capture="environment" onchange="uploadExtra(this, 101)"></label>
+    </div>
   </section>
 </div>
+<div id="lightbox" onclick="closeLightbox()"><button class="lb-close" aria-label="St&auml;ng">&#x2715;</button><img id="lbImg" alt=""><div class="lb-cap"><div class="t" id="lbTitle"></div><div class="b" id="lbTable"></div></div></div>
 <div id="toast" class="toast"></div>
 <div id="celebrate"><div class="cel-card"><div class="cel-emoji">&#x1F389;</div><div class="cel-text"></div></div></div>
 <script>
@@ -117,9 +137,9 @@
     "Dansgolvet", "N\u00e5got gammalt", "En hemlig blick",
     "Bordets vackraste detalj", "Tre generationer", "En kyss"
   ];
-  const POLL_MS = 7000;
+  const POLL_MS = 4000;
   // =======================================
-  let currentTable = null, lastView = 'landing', pollTimer = null, feed = [];
+  let currentTable = null, lastView = 'landing', pollTimer = null, feed = [], pendingUploads = [];
   function show(name) {
     if (name !== 'wall') lastView = name;
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
@@ -153,43 +173,83 @@
       input.type = 'file'; input.accept = 'image/*'; input.setAttribute('capture', 'environment');
       const taskEl = document.createElement('span'); taskEl.className = 'task'; taskEl.textContent = task;
       label.appendChild(taskEl); label.insertAdjacentHTML('beforeend', camIcon); label.appendChild(input);
-      const matches = feed.filter(f => f.table === currentTable && f.taskIndex === idx).sort((a,b) => b.ts - a.ts);
+      const matches = feed.concat(pendingUploads).filter(f => f.table === currentTable && f.taskIndex === idx).sort((a,b) => b.ts - a.ts);
       if (matches.length) {
         const img = document.createElement('img'); img.src = matches[0].url; label.appendChild(img); label.classList.add('done');
+        if (matches[0].pending) label.classList.add('pending');
         const ban = document.createElement('span'); ban.className = 'banner'; ban.textContent = task; label.appendChild(ban);
         if (matches.length > 1) { const c = document.createElement('span'); c.className = 'count'; c.textContent = '+' + (matches.length - 1); label.appendChild(c); }
       }
       input.addEventListener('change', e => {
         const file = e.target.files && e.target.files[0]; if (!file) return;
-        const img = document.createElement('img'); img.src = URL.createObjectURL(file);
-        label.querySelector('img') && label.querySelector('img').remove();
-        label.appendChild(img); label.classList.add('done', 'pending');
-        if (!label.querySelector('.banner')) { const ban = document.createElement('span'); ban.className = 'banner'; ban.textContent = task; label.appendChild(ban); }
-        uploadPhoto(file, currentTable, idx, label);
+        const pendingItem = { table: currentTable, taskIndex: idx, url: URL.createObjectURL(file), ts: Date.now(), pending: true };
+        pendingUploads.push(pendingItem);
+        renderCard();
+        toast('Skickar\u2026 \ud83d\udce4');
+        uploadPhoto(file, currentTable, idx, pendingItem);
       });
       grid.appendChild(label);
     });
   }
-  async function uploadPhoto(file, table, taskIndex, labelEl) {
-    if (!API_URL) { toast('Demo-l\u00e4ge: ingen server kopplad \u00e4n'); labelEl.classList.remove('pending'); return; }
+  async function uploadPhoto(file, table, taskIndex, pendingItem) {
+    if (!API_URL) { toast('Demo-l\u00e4ge: ingen server kopplad \u00e4n'); removePending(pendingItem); return; }
     try {
-      const dataUrl = await fileToDataUrl(file);
+      const dataUrl = await compressImage(file);
       const res = await fetch(API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ table, taskIndex, task: TASKS[taskIndex], image: dataUrl, filename: file.name })
+        body: JSON.stringify({ table, taskIndex, task: taskLabel(taskIndex), image: dataUrl, filename: file.name })
       });
       const out = await res.json();
       if (out && out.ok && out.url) {
         feed.push({ id: out.id, table, taskIndex, url: out.url, ts: Date.now() });
-        labelEl.classList.remove('pending'); toast('Bidrag tillagt! \ud83c\udf89');
+        removePending(pendingItem, true); toast('Bidrag tillagt! \ud83c\udf89');
       } else {
-        labelEl.classList.remove('pending', 'done'); labelEl.querySelector('img') && labelEl.querySelector('img').remove();
+        removePending(pendingItem);
         toast('Uppladdning misslyckades: ' + ((out && out.error) || 'ok\u00e4nt fel'));
       }
     } catch (err) {
-      labelEl.classList.remove('pending', 'done'); labelEl.querySelector('img') && labelEl.querySelector('img').remove();
+      removePending(pendingItem);
       toast('N\u00e5got gick fel \u2014 f\u00f6rs\u00f6k igen');
+    }
+  }
+  function removePending(item, keepUrl) {
+    if (!item) return;
+    pendingUploads = pendingUploads.filter(p => p !== item);
+    if (!keepUrl) URL.revokeObjectURL(item.url);
+    if (document.getElementById('view-card').classList.contains('active')) renderCard();
+  }
+  // Etikett f\u00f6r specialbilder (100 = bordsbild, 101 = spontanbild)
+  function taskLabel(i) {
+    if (i === 100) return 'Bordsbild';
+    if (i === 101) return 'Spontanbild';
+    return TASKS[i] || '';
+  }
+  // Bordsbild/spontanbild \u2014 samma uppladdningsfl\u00f6de, eget taskIndex utanf\u00f6r po\u00e4ngr\u00e4kningen
+  function uploadExtra(inputEl, taskIndex) {
+    const file = inputEl.files && inputEl.files[0]; if (!file) return;
+    inputEl.value = '';
+    const table = currentTable || 'gemensam';
+    toast('Skickar\u2026 \ud83d\udce4');
+    uploadPhoto(file, table, taskIndex, null);
+  }
+  // Skala ner till max 1600 px och JPEG ~0.82 f\u00f6re uppladdning (10\u201320x mindre payload).
+  // Faller tillbaka p\u00e5 originalet om n\u00e5got g\u00e5r fel.
+  async function compressImage(file) {
+    const MAX = 1600, QUALITY = 0.82;
+    try {
+      if (file.size < 300 * 1024) return await fileToDataUrl(file);
+      const objUrl = URL.createObjectURL(file);
+      const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = objUrl; });
+      const scale = Math.min(1, MAX / Math.max(img.naturalWidth, img.naturalHeight));
+      const w = Math.round(img.naturalWidth * scale), h = Math.round(img.naturalHeight * scale);
+      const canvas = document.createElement('canvas'); canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      URL.revokeObjectURL(objUrl);
+      const out = canvas.toDataURL('image/jpeg', QUALITY);
+      return (out && out.length > 100) ? out : await fileToDataUrl(file);
+    } catch (e) {
+      return await fileToDataUrl(file);
     }
   }
   function fileToDataUrl(file) { return new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = rej; r.readAsDataURL(file); }); }
@@ -200,7 +260,9 @@
     grid.innerHTML = '';
     feed.slice().reverse().forEach(f => {
       const post = document.createElement('div'); post.className = 'post';
-      post.innerHTML = '<img src="' + f.url + '" loading="lazy"><div class="meta"><div class="t">' + (TASKS[f.taskIndex] || '') + '</div><div class="b">Bord ' + f.table + '</div></div>';
+      const who = (f.table === 'gemensam') ? 'Alla g\u00e4ster' : 'Bord ' + f.table;
+      post.innerHTML = '<img src="' + f.url + '" loading="lazy"><div class="meta"><div class="t">' + taskLabel(f.taskIndex) + '</div><div class="b">' + who + '</div></div>';
+      post.onclick = () => openLightbox(f);
       grid.appendChild(post);
     });
   }
@@ -222,7 +284,7 @@
   let celebrated = new Set(JSON.parse(localStorage.getItem('fotobingo_celebrated') || '[]'));
   function computeFull() {
     const solved = {};
-    feed.forEach(f => { (solved[f.table] = solved[f.table] || new Set()).add(f.taskIndex); });
+    feed.forEach(f => { if (f.taskIndex >= TASKS.length) return; (solved[f.table] = solved[f.table] || new Set()).add(f.taskIndex); });
     const s = new Set();
     Object.keys(solved).forEach(t => { if (solved[t].size >= TASKS.length) s.add(String(t)); });
     return s;
@@ -242,6 +304,15 @@
   function markFullTablesInPicker() {
     document.querySelectorAll('#tableGrid .tile').forEach(tile => {
       tile.classList.toggle('full', fullTables.has(String(tile.dataset.table)));
+      // Senaste bordsbilden (taskIndex 100) som bakgrund p\u00e5 bordsknappen
+      const pics = feed.filter(f => String(f.table) === String(tile.dataset.table) && f.taskIndex === 100).sort((a,b) => b.ts - a.ts);
+      if (pics.length) {
+        tile.classList.add('haspic');
+        tile.style.backgroundImage = 'linear-gradient(rgba(43,33,24,.25), rgba(43,33,24,.45)), url(' + JSON.stringify(pics[0].url) + ')';
+      } else {
+        tile.classList.remove('haspic');
+        tile.style.backgroundImage = '';
+      }
     });
   }
   function celebrate(tableNo) {
@@ -260,6 +331,18 @@
       setTimeout(() => c.remove(), 4000);
     }
     setTimeout(() => layer.classList.remove('show'), 4200);
+  }
+  function openLightbox(f) {
+    const img = document.getElementById('lbImg');
+    img.onerror = () => { img.onerror = null; img.src = f.url; }; // fallback till standardstorlek
+    img.src = (f.url.indexOf('googleusercontent') > -1) ? f.url + '=s1600' : f.url;
+    document.getElementById('lbTitle').textContent = taskLabel(f.taskIndex);
+    document.getElementById('lbTable').textContent = (f.table === 'gemensam') ? 'Alla g\u00e4ster' : 'Bord ' + f.table;
+    document.getElementById('lightbox').classList.add('show');
+  }
+  function closeLightbox() {
+    document.getElementById('lightbox').classList.remove('show');
+    document.getElementById('lbImg').src = '';
   }
   function startPolling() { stopPolling(); pollTimer = setInterval(refreshFeed, POLL_MS); }
   function stopPolling() { if (pollTimer) clearInterval(pollTimer); pollTimer = null; }

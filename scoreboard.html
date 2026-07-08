@@ -12,20 +12,20 @@
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family:'Inter',system-ui,sans-serif; color:var(--ink);
     background: radial-gradient(130% 90% at 50% -10%, #fbf6ec 0%, var(--paper) 55%) fixed;
-    min-height:100vh; padding: 3vh 3vw; }
+    min-height:100vh; padding: 3vh 3.5vw; overflow:hidden; cursor:none; }
   header { text-align:center; margin-bottom: 2.5vh; }
-  .eyebrow { font-size:1rem; letter-spacing:.4em; text-transform:uppercase; color:var(--rose); font-weight:700; }
-  h1 { font-family:'Fraunces',serif; font-weight:700; font-size: clamp(2.4rem, 5vw, 4rem); color:var(--plum); line-height:1; margin-top:.1em; }
+  .eyebrow { font-size:clamp(.9rem,1.4vw,1.4rem); letter-spacing:.4em; text-transform:uppercase; color:var(--rose); font-weight:700; }
+  h1 { font-family:'Fraunces',serif; font-weight:700; font-size: clamp(2.4rem, 5.5vw, 5.5rem); color:var(--plum); line-height:1; margin-top:.1em; }
   .layout { display:grid; grid-template-columns: 1.3fr 1fr; gap: 3vw; align-items:start; }
   @media (max-width: 900px){ .layout{ grid-template-columns:1fr; } }
   .panel-title { font-family:'Fraunces',serif; font-weight:600; font-size: clamp(1.3rem,2.5vw,2rem); color:var(--plum); margin-bottom:1.5vh; display:flex; align-items:center; gap:.5em; }
   /* leaderboard */
-  .row { display:flex; align-items:center; gap:18px; background:var(--card); border:1px solid var(--line); border-radius:18px; padding:14px 20px; margin-bottom:12px; box-shadow:0 6px 20px rgba(43,33,24,.07); transition: all .5s ease; }
-  .row .rank { font-family:'Fraunces',serif; font-weight:700; font-size: clamp(1.4rem,3vw,2.2rem); color:var(--rose); width:1.6em; text-align:center; flex:none; }
+  .row { display:flex; align-items:center; gap:1.4vw; background:var(--card); border:1px solid var(--line); border-radius:18px; padding:1.6vh 1.6vw; margin-bottom:1.4vh; box-shadow:0 6px 20px rgba(43,33,24,.07); transition: all .5s ease; }
+  .row .rank { font-family:'Fraunces',serif; font-weight:700; font-size: clamp(1.4rem,3.4vw,3.4rem); color:var(--rose); width:1.6em; text-align:center; flex:none; }
   .row .who { flex:1; min-width:0; }
-  .row .who .name { font-weight:700; font-size: clamp(1.1rem,2.2vw,1.6rem); color:var(--plum); }
-  .row .who .detail { font-size: clamp(.78rem,1.4vw,.95rem); color:#6b5d4c; margin-top:2px; }
-  .row .pts { font-family:'Fraunces',serif; font-weight:700; font-size: clamp(1.4rem,3vw,2.4rem); color:var(--plum); flex:none; }
+  .row .who .name { font-weight:700; font-size: clamp(1.1rem,2.4vw,2.4rem); color:var(--plum); }
+  .row .who .detail { font-size: clamp(.78rem,1.5vw,1.3rem); color:#6b5d4c; margin-top:2px; }
+  .row .pts { font-family:'Fraunces',serif; font-weight:700; font-size: clamp(1.4rem,3.6vw,3.6rem); color:var(--plum); flex:none; }
   .row .pts small { font-size:.5em; font-weight:600; color:var(--rose); display:block; text-align:right; letter-spacing:.1em; text-transform:uppercase; }
   .row.top1 { background: linear-gradient(100deg,#fff7e6,#fffdf8); border-color: var(--gold); }
   .row.top1 .rank { color: var(--gold); }
@@ -34,9 +34,11 @@
   .photos { display:grid; grid-template-columns: repeat(2,1fr); gap:14px; }
   .ph { background:var(--card); border:1px solid var(--line); border-radius:16px; overflow:hidden; box-shadow:0 6px 20px rgba(43,33,24,.07); position:relative; }
   .ph img { width:100%; aspect-ratio:1; object-fit:cover; display:block; }
-  .ph .cap { padding:7px 10px; font-size:.8rem; }
+  .ph { animation: phin .8s ease both; }
+  @keyframes phin { from { opacity:0; transform:scale(.97); } to { opacity:1; transform:scale(1); } }
+  .ph .cap { padding:1vh 1vw; font-size:clamp(.8rem,1.3vw,1.15rem); }
   .ph .cap .t { font-weight:600; color:var(--plum); }
-  .ph .cap .b { color:var(--rose); font-size:.72rem; text-transform:uppercase; letter-spacing:.06em; }
+  .ph .cap .b { color:var(--rose); font-size:clamp(.72rem,1vw,.95rem); text-transform:uppercase; letter-spacing:.06em; }
   .empty { color:#9b8d79; padding:30px 0; text-align:center; }
   .pulse { position:fixed; bottom:2vh; right:2vw; font-size:.8rem; color:#bcae9c; }
 </style>
@@ -56,7 +58,7 @@
       <div id="photos" class="photos"><p class="empty">Inga bilder &auml;n</p></div>
     </section>
   </div>
-  <div class="pulse" id="pulse">&#x1F504; uppdaterar var 10:e sekund</div>
+  <div class="pulse" id="pulse">&#x1F504; uppdaterar var 5:e sekund</div>
 <script>
   // Samma /exec-URL som i index.html:
   const API_URL = "https://script.google.com/macros/s/AKfycbzd9oEzfvtNcXTNO-DSFSke7l3pqguWk9cC_4YOgA1qGfVd4fcx6kxxzX478ulkNOHs/exec";
@@ -65,7 +67,15 @@
     "De finaste skorna","En kram","Dansgolvet","N\u00e5got gammalt","En hemlig blick",
     "Bordets vackraste detalj","Tre generationer","En kyss"
   ];
-  const POLL_MS = 10000;
+  const POLL_MS = 5000;
+
+  // Etikett f\u00f6r specialbilder (100 = bordsbild, 101 = spontanbild)
+  function taskLabel(i) {
+    if (i === 100) return 'Bordsbild';
+    if (i === 101) return 'Spontanbild';
+    return TASKS[i] || '';
+  }
+  function whoLabel(t) { return (t === 'gemensam') ? 'Alla g\u00e4ster' : 'Bord ' + t; }
 
   async function refresh() {
     try {
@@ -92,7 +102,11 @@
     });
   }
   let allItems = [];
-  function renderPhotos(items) { allItems = items || []; drawRandomPhotos(); }
+  function renderPhotos(items) {
+    allItems = items || [];
+    document.getElementById('pulse').innerHTML = '\ud83d\udcf8 ' + allItems.length + ' bilder \u00b7 \ud83d\udd04 uppdaterar var 5:e sekund';
+    drawRandomPhotos();
+  }
   function drawRandomPhotos() {
     const el = document.getElementById('photos');
     if (!allItems.length) { el.innerHTML = '<p class="empty">Inga bilder \u00e4n</p>'; return; }
@@ -103,7 +117,7 @@
     pick.forEach(f => {
       const ph = document.createElement('div'); ph.className = 'ph';
       ph.innerHTML = '<img src="' + f.url + '">' +
-        '<div class="cap"><div class="t">' + (TASKS[f.taskIndex]||'') + '</div><div class="b">Bord ' + f.table + '</div></div>';
+        '<div class="cap"><div class="t">' + taskLabel(f.taskIndex) + '</div><div class="b">' + whoLabel(f.table) + '</div></div>';
       el.appendChild(ph);
     });
   }
