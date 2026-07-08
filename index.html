@@ -46,6 +46,12 @@
   .extra-actions label { flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer; font-size: .88rem; font-weight: 600; padding: 13px 10px; border-radius: 999px; background: transparent; color: var(--plum); border: 1.5px solid var(--line); box-shadow: none; }
   .extra-actions label:active { transform: scale(.97); }
   .extra-actions input { display: none; }
+  #wallFilter { border: 1.5px solid var(--line); background: var(--card); color: var(--plum); font-family: 'Inter'; font-size: .8rem; font-weight: 600; padding: 7px 10px; border-radius: 999px; -webkit-appearance: none; appearance: none; }
+  .float-action { position: fixed; bottom: max(16px, env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); z-index: 60; width: min(320px, 78vw); }
+  .float-action label { display: flex; align-items: center; justify-content: center; gap: 7px; cursor: pointer; font-size: .92rem; font-weight: 600; padding: 14px 18px; border-radius: 999px; background: var(--plum); color: #fff; box-shadow: 0 10px 30px rgba(43,33,24,.35); }
+  .float-action label:active { transform: scale(.97); }
+  .float-action input { display: none; }
+  #view-wall .wall { padding-bottom: 84px; }
   #lightbox { position: fixed; inset: 0; z-index: 200; background: rgba(30,22,15,.92); display: none; align-items: center; justify-content: center; padding: 4vw; }
   #lightbox.show { display: flex; }
   #lightbox img { max-width: 100%; max-height: 82vh; border-radius: 14px; box-shadow: 0 24px 80px rgba(0,0,0,.5); }
@@ -117,9 +123,9 @@
     <p class="footnote">Tryck p&aring; en ruta &rarr; kameran &ouml;ppnas &rarr; fotot fyller brickan och hamnar p&aring; v&auml;ggen.<br>Ta g&auml;rna <strong>flera bilder p&aring; samma uppgift</strong> &mdash; ju fler desto roligare!</p>
   </section>
   <section id="view-wall" class="view">
-    <div class="topbar"><button class="back" onclick="show(lastView)">&larr;</button><span class="ttl">Bildv&auml;ggen</span></div>
+    <div class="topbar"><button class="back" onclick="show(lastView)">&larr;</button><span class="ttl">Bildv&auml;ggen</span><select id="wallFilter" onchange="setWallFilter(this.value)"></select></div>
     <div id="wallGrid" class="wall"></div>
-    <div class="extra-actions">
+    <div class="float-action">
       <label>&#x2728; Ta en spontanbild<input type="file" accept="image/*" capture="environment" onchange="uploadExtra(this, 101)"></label>
     </div>
   </section>
@@ -153,6 +159,15 @@
     const t = document.getElementById('toast'); t.innerHTML = msg; t.classList.add('show');
     clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove('show'), 2600);
   }
+  let wallFilter = 'alla';
+  function setWallFilter(v) { wallFilter = v; renderWall(); }
+  (function () {
+    const sel = document.getElementById('wallFilter');
+    const opts = [['alla','Alla bilder']];
+    for (let i = 1; i <= NUM_TABLES; i++) opts.push([String(i), 'Bord ' + i]);
+    opts.push(['spontan','Spontanbilder'], ['bordsbild','Bordsbilder']);
+    sel.innerHTML = opts.map(o => '<option value="' + o[0] + '">' + o[1] + '</option>').join('');
+  })();
   const tableGrid = document.getElementById('tableGrid');
   for (let i = 1; i <= NUM_TABLES; i++) {
     const b = document.createElement('button'); b.className = 'tile'; b.dataset.table = i;
@@ -258,7 +273,11 @@
     const grid = document.getElementById('wallGrid');
     if (!feed.length) { grid.innerHTML = '<p class="wall-empty">Inga bilder \u00e4n \u2014 bli f\u00f6rst att bidra!</p>'; return; }
     grid.innerHTML = '';
-    feed.slice().reverse().forEach(f => {
+    let items = feed.slice();
+    if (wallFilter === 'spontan') items = items.filter(f => f.taskIndex === 101);
+    else if (wallFilter === 'bordsbild') items = items.filter(f => f.taskIndex === 100);
+    else if (wallFilter !== 'alla') items = items.filter(f => String(f.table) === wallFilter);
+    items.reverse().forEach(f => {
       const post = document.createElement('div'); post.className = 'post';
       const who = (f.table === 'gemensam') ? 'Alla g\u00e4ster' : 'Bord ' + f.table;
       post.innerHTML = '<img src="' + f.url + '" loading="lazy"><div class="meta"><div class="t">' + taskLabel(f.taskIndex) + '</div><div class="b">' + who + '</div></div>';
