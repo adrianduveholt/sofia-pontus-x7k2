@@ -46,14 +46,15 @@
   .extra-actions label { flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer; font-size: .88rem; font-weight: 600; padding: 13px 10px; border-radius: 999px; background: transparent; color: var(--plum); border: 1.5px solid var(--line); box-shadow: none; }
   .extra-actions label:active { transform: scale(.97); }
   .extra-actions input { display: none; }
-  #toast button { pointer-events: auto; margin-left: 10px; border: 0; border-radius: 999px; padding: 6px 14px; font: inherit; font-weight: 700; background: var(--gold); color: #fff; cursor: pointer; }
+  #toast button { pointer-events: auto; margin-left: auto; flex-shrink: 0; border: 0; border-radius: 999px; padding: 13px 20px; font: inherit; font-size: .95rem; font-weight: 700; background: var(--gold); color: #fff; cursor: pointer; }
   #lightbox .lb-save { position: fixed; top: 14px; left: 14px; height: 44px; padding: 0 18px; border-radius: 999px; border: 0; background: rgba(255,255,255,.14); color: #fff; font: inherit; font-size: .9rem; font-weight: 600; cursor: pointer; }
   #wallFilter { border: 1.5px solid var(--line); background: var(--card); color: var(--plum); font-family: 'Inter'; font-size: .8rem; font-weight: 600; padding: 7px 10px; border-radius: 999px; -webkit-appearance: none; appearance: none; }
-  .float-action { position: fixed; bottom: max(16px, env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); z-index: 60; width: min(320px, 78vw); }
+  .float-action { display: none; position: fixed; bottom: max(16px, env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); z-index: 60; width: min(320px, 78vw); }
   .float-action label { display: flex; align-items: center; justify-content: center; gap: 7px; cursor: pointer; font-size: .92rem; font-weight: 600; padding: 14px 18px; border-radius: 999px; background: var(--plum); color: #fff; box-shadow: 0 10px 30px rgba(43,33,24,.35); }
   .float-action label:active { transform: scale(.97); }
   .float-action input { display: none; }
-  #view-wall .wall { padding-bottom: 84px; }
+  body.on-wall .float-action { display: block; }
+  #view-wall .wall { padding-bottom: 96px; }
   #lightbox { position: fixed; inset: 0; z-index: 200; background: rgba(30,22,15,.92); display: none; align-items: center; justify-content: center; padding: 4vw; }
   #lightbox.show { display: flex; }
   #lightbox img { max-width: 100%; max-height: 82vh; border-radius: 14px; box-shadow: 0 24px 80px rgba(0,0,0,.5); }
@@ -96,7 +97,7 @@
   .post .meta .b { font-size: .66rem; letter-spacing: .08em; text-transform: uppercase; color: var(--rose); margin-top: 2px; }
 
   .wall-empty { text-align: center; color: #9b8d79; padding: 40px 0; grid-column: 1 / -1; }
-  .toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%) translateY(20px); background: var(--ink); color: #fff; padding: 12px 18px; border-radius: 999px; font-size: .9rem; opacity: 0; transition: all .3s; pointer-events: none; z-index: 50; }
+  .toast { position: fixed; left: 50%; bottom: max(20px, env(safe-area-inset-bottom)); transform: translateX(-50%) translateY(20px); width: calc(100vw - 28px); max-width: 560px; display: flex; align-items: center; gap: 12px; background: var(--ink); color: #fff; padding: 16px 18px; border-radius: 18px; font-size: 1rem; box-shadow: 0 14px 40px rgba(43,33,24,.35); opacity: 0; transition: all .3s; pointer-events: none; z-index: 80; }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
   .footnote { text-align: center; color: #9b8d79; font-size: .78rem; margin-top: 26px; }
 </style>
@@ -127,10 +128,10 @@
   <section id="view-wall" class="view">
     <div class="topbar"><button class="back" onclick="show(lastView)">&larr;</button><span class="ttl">Bildv&auml;ggen</span><select id="wallFilter" onchange="setWallFilter(this.value)"></select></div>
     <div id="wallGrid" class="wall"></div>
-    <div class="float-action">
-      <label>&#x2728; Ta en spontanbild<input type="file" accept="image/*" capture="environment" onchange="uploadExtra(this, 101)"></label>
-    </div>
   </section>
+</div>
+<div class="float-action" id="floatSpontan">
+  <label>&#x2728; Ta en spontanbild<input type="file" accept="image/*" capture="environment" onchange="uploadExtra(this, 101)"></label>
 </div>
 <div id="lightbox" onclick="closeLightbox()"><button class="lb-close" aria-label="St&auml;ng">&#x2715;</button><button class="lb-save" onclick="event.stopPropagation(); saveFromLightbox()">&#x1F4E5; Spara</button><img id="lbImg" alt=""><div class="lb-cap"><div class="t" id="lbTitle"></div><div class="b" id="lbTable"></div></div></div>
 <div id="toast" class="toast"></div>
@@ -142,8 +143,8 @@
   const TASKS = [
     "En selfie med brudparet", "N\u00e5gon i bl\u00e5tt", "En sk\u00e5l \ud83e\udd42",
     "Tv\u00e5 som skrattar", "De finaste skorna", "En kram",
-    "Dansgolvet", "N\u00e5got gammalt", "En hemlig blick",
-    "Bordets vackraste detalj", "Tre generationer", "En kyss"
+    "En ov\u00e4ntad v\u00e4nskap", "N\u00e5got gammalt", "En hemlig blick",
+    "Bordets vackraste detalj", "Flera generationer", "En kyss"
   ];
   const POLL_MS = 4000;
   // =======================================
@@ -151,6 +152,7 @@
   function show(name) {
     if (name !== 'wall') lastView = name;
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.body.classList.toggle('on-wall', name === 'wall');
     document.getElementById('view-' + name).classList.add('active');
     window.scrollTo(0, 0);
     if (name === 'landing') { stopPolling(); }
