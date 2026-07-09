@@ -399,7 +399,15 @@ function refreshTMUI(){
 
 /* ============ API ============ */
 function authH(){return{Authorization:"Bearer "+token,"Content-Type":"application/json"};}
-async function apiPlay(body){const r=await fetch("https://api.spotify.com/v1/me/player/play?device_id="+deviceId,{method:"PUT",headers:authH(),body:JSON.stringify(body)});if(!r.ok&&r.status!==204)throw new Error("HTTP "+r.status);}
+async function apiPlay(body){
+  let r=await fetch("https://api.spotify.com/v1/me/player/play?device_id="+deviceId,{method:"PUT",headers:authH(),body:JSON.stringify(body)});
+  if(r.status===401||r.status===404){
+    // token troligen utgången — förnya tyst och försök igen en gång
+    const ok=await refreshToken();
+    if(ok){ r=await fetch("https://api.spotify.com/v1/me/player/play?device_id="+deviceId,{method:"PUT",headers:authH(),body:JSON.stringify(body)}); }
+  }
+  if(!r.ok&&r.status!==204)throw new Error("HTTP "+r.status);
+}
 function ensureReady(){if(!token){document.getElementById("setup").scrollIntoView({behavior:"smooth"});alert("Anslut till Spotify först.");return false;}if(!deviceId){alert("Spelaren är inte redo än — vänta någon sekund.");return false;}return true;}
 
 /* ============ AUTH (PKCE) ============ */
@@ -420,19 +428,60 @@ async function handleRedirect(){
   try{
     const res=await fetch("https://accounts.spotify.com/api/token",{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:new URLSearchParams({client_id:localStorage.getItem("wed_client_id"),grant_type:"authorization_code",code,redirect_uri:REDIRECT,code_verifier:localStorage.getItem("wed_verifier")})});
     const data=await res.json();
-    if(data.access_token){token=data.access_token;window.history.replaceState({},"",REDIRECT);return true;}
+    if(data.access_token){
+      token=data.access_token;
+      if(data.refresh_token) localStorage.setItem("wed_refresh",data.refresh_token);
+      scheduleRefresh(data.expires_in||3600);
+      window.history.replaceState({},"",REDIRECT);
+      return true;
+    }
   }catch(e){console.error(e);}
   return false;
 }
+
+/* Förnyar åtkomst-token tyst med sparad refresh token (ingen ny inloggning) */
+let refreshTimer=null;
+async function refreshToken(){
+  const rt=localStorage.getItem("wed_refresh");
+  const cid=localStorage.getItem("wed_client_id");
+  if(!rt||!cid) return false;
+  try{
+    const res=await fetch("https://accounts.spotify.com/api/token",{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:new URLSearchParams({client_id:cid,grant_type:"refresh_token",refresh_token:rt})});
+    const data=await res.json();
+    if(data.access_token){
+      token=data.access_token;
+      if(data.refresh_token) localStorage.setItem("wed_refresh",data.refresh_token);
+      scheduleRefresh(data.expires_in||3600);
+      return true;
+    }
+  }catch(e){console.error("refresh fail",e);}
+  return false;
+}
+function scheduleRefresh(expiresInSec){
+  if(refreshTimer)clearTimeout(refreshTimer);
+  // förnya i god tid före utgången (senast 5 min innan)
+  const ms=Math.max(60000,(expiresInSec-300)*1000);
+  refreshTimer=setTimeout(refreshToken,ms);
+}
+/* När skärmen väcks: förnya token direkt så nästa knapptryck funkar */
+document.addEventListener("visibilitychange",function(){
+  if(!document.hidden && localStorage.getItem("wed_refresh")){ refreshToken(); }
+});
+
 let nowTrackText="";
 function initPlayer(){
   if(!token)return;
   setStatus("Startar spelaren…",false);
-  player=new Spotify.Player({name:"Bröllop · musikstyrning",getOAuthToken:cb=>cb(token),volume:1});
+  player=new Spotify.Player({name:"Bröllop · musikstyrning",getOAuthToken:function(cb){
+    // SDK ber om token vid behov — ge alltid den färskaste, förnya om möjligt
+    const rt=localStorage.getItem("wed_refresh");
+    if(rt){ refreshToken().then(function(ok){ cb(token); }); }
+    else { cb(token); }
+  },volume:1});
   player.addListener("ready",function(o){deviceId=o.device_id;setStatus("Ansluten — redo",true);document.getElementById("connectBtn").textContent="Ansluten ✓";document.getElementById("bgBtn").disabled=false;refreshTMUI();});
   player.addListener("not_ready",function(){setStatus("Tappade anslutningen",false);});
   player.addListener("player_state_changed",function(st){if(!st)return;isPaused=st.paused;const t=st.track_window&&st.track_window.current_track;nowTrackText=t?(t.name+" — "+((t.artists[0]&&t.artists[0].name)||"")):"";if(tmActive){return;}if(bgActive)refreshBgUI();else{markActive();updateDock();}});
-  player.addListener("authentication_error",function(){setStatus("Inloggning misslyckades — anslut igen",false);});
+  player.addListener("authentication_error",function(){ refreshToken().then(function(ok){ if(!ok) setStatus("Inloggning gick ut — tryck Anslut igen",false); }); });
   player.addListener("account_error",function(){setStatus("Kräver Spotify Premium",false);});
   player.connect();
 }
@@ -458,7 +507,19 @@ tmEndEl.oninput=function(e){const v=e.target.value.trim()||"0:13";tmEnd=parseTim
 (async function(){
   load();
   const ok=await handleRedirect();
-  if(ok){setStatus("Inloggad — startar spelaren…",false);document.getElementById("setup").style.display="none";if(window.Spotify)initPlayer();}
+  if(ok){
+    setStatus("Inloggad — startar spelaren…",false);
+    document.getElementById("setup").style.display="none";
+    if(window.Spotify)initPlayer();
+  } else if(localStorage.getItem("wed_refresh")){
+    // Ingen ny inloggning i URL:en, men vi har en sparad session — återanslut tyst
+    setStatus("Återansluter…",false);
+    const r=await refreshToken();
+    if(r){
+      document.getElementById("setup").style.display="none";
+      if(window.Spotify)initPlayer();
+    }
+  }
   await sync();
 })();
 </script>
