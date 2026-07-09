@@ -106,6 +106,11 @@
     <input type="text" id="bgUrl" placeholder="https://open.spotify.com/playlist/…" autocomplete="off">
     <div class="field-label">Körschema-källa (byt bara om länken slutar fungera)</div>
     <input type="text" id="feedUrl" placeholder="URL till körschema-JSON" autocomplete="off">
+    <div class="field-label">TM-jingle — start och slut (mm:ss.t, tiondelar OK)</div>
+    <div style="display:flex;gap:8px">
+      <input type="text" id="tmStart" placeholder="0:00" autocomplete="off" style="flex:1">
+      <input type="text" id="tmEnd" placeholder="0:13" autocomplete="off" style="flex:1">
+    </div>
     <p style="margin-top:12px">Kräver <strong>Spotify Premium</strong>. Musiken spelas i denna flik — koppla datorn till festens ljudanläggning.<br>
     Låtlänk och starttid läses från kolumnerna <strong>Spotify-länk</strong> och <strong>Starta låt från</strong> i körschemat. Ändra tid där och tryck Synka.</p>
   </div>
@@ -121,6 +126,11 @@
 </div>
 
 <div class="dock">
+  <div class="dock-row">
+    <span class="dlabel">TM-jingle</span>
+    <span class="dnow" id="tmNow"><span class="cue-name">Toastmaster-signatur</span>0:00–0:13</span>
+    <button class="dbtn gold" id="tmBtn" disabled>&#9654; Spela TM-jingle</button>
+  </div>
   <div class="dock-row">
     <span class="dlabel">Aktiv låt</span>
     <span class="dnow" id="activeNow"><span class="cue-name">Ingen punkt spelas</span>&mdash;</span>
@@ -146,10 +156,13 @@ const FADE_MS = 6000, FADE_STEPS = 60;
 let player=null, deviceId=null, token=null, clientId=null, bgUrl="", feedUrl=FEED_DEFAULT;
 let rows=[], overrides={};
 let activeCue=null, isPaused=false, fadeTimer=null, bgActive=false;
+let tmStart=0, tmEnd=13000, tmTimer=null, tmPoll=null, tmActive=false;
 
 const clientIdEl=document.getElementById("clientId");
 const bgUrlEl=document.getElementById("bgUrl");
 const feedUrlEl=document.getElementById("feedUrl");
+const tmStartEl=document.getElementById("tmStart");
+const tmEndEl=document.getElementById("tmEnd");
 
 /* ============ LAGRING ============ */
 function load(){
@@ -157,13 +170,17 @@ function load(){
   bgUrl=localStorage.getItem("wed_bg_url")||"";
   feedUrl=localStorage.getItem("wed_feed_url")||FEED_DEFAULT;
   try{overrides=JSON.parse(localStorage.getItem("wed_overrides"))||{};}catch(e){overrides={};}
+  const savedStart=localStorage.getItem("wed_tm_start")||"0:00";
+  const savedEnd=localStorage.getItem("wed_tm_end")||"0:13";
+  tmStart=parseTime(savedStart); tmEnd=parseTime(savedEnd);
   clientIdEl.value=clientId; bgUrlEl.value=bgUrl; feedUrlEl.value=feedUrl;
+  tmStartEl.value=savedStart; tmEndEl.value=savedEnd;
   document.getElementById("redirectShow").textContent=REDIRECT;
 }
 function saveOverrides(){localStorage.setItem("wed_overrides",JSON.stringify(overrides));const m=document.getElementById("savedMsg");m.textContent="Sparat ✓";setTimeout(()=>m.textContent="",1800);}
 
 /* ============ HJÄLPARE ============ */
-function parseTime(str){str=(str||"").trim();if(!str)return 0;const p=str.split(":").map(s=>parseInt(s,10)||0);if(p.length===2)return(p[0]*60+p[1])*1000;if(p.length===3)return(p[0]*3600+p[1]*60+p[2])*1000;return(parseInt(str,10)||0)*1000;}
+function parseTime(str){str=(str||"").trim();if(!str)return 0;str=str.replace(",",".");const p=str.split(":").map(s=>parseFloat(s)||0);if(p.length===2)return Math.round((p[0]*60+p[1])*1000);if(p.length===3)return Math.round((p[0]*3600+p[1]*60+p[2])*1000);return Math.round((parseFloat(str)||0)*1000);}
 function trackUri(url){url=(url||"").trim();if(!url)return null;let m=url.match(/track[/:]([A-Za-z0-9]+)/);if(m)return"spotify:track:"+m[1];if(/^[A-Za-z0-9]{22}$/.test(url))return"spotify:track:"+url;return null;}
 function playlistUri(url){url=(url||"").trim();if(!url)return null;let m=url.match(/playlist[/:]([A-Za-z0-9]+)/);if(m)return"spotify:playlist:"+m[1];return null;}
 function escapeHtml(s){return(s||"").replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]));}
@@ -247,6 +264,7 @@ function render(){
     el.querySelector('[data-act=play]').onclick=()=>playCue(i);
   });
   markActive();
+  refreshTMUI();
 }
 function quickRefresh(el,c){const hasLink=!!trackUri(resolveLink(c));el.querySelector('[data-act=play]').disabled=!hasLink;}
 
@@ -333,6 +351,52 @@ function refreshBgUI(){
   document.getElementById("bgNow").childNodes[1].nodeValue=bgActive?(nowTrackText||"Spelar…"):"—";
 }
 
+/* ============ TM-JINGLE ============ */
+/* Hittar TM-låten: första raden vars ingångslåt är "TM Låt" och som har en giltig länk */
+function findTMUri(){
+  for(const c of rows){ if(c.tm){ const u=trackUri(resolveLink(c)); if(u) return u; } }
+  return null;
+}
+function clearTM(){ if(tmTimer){clearTimeout(tmTimer);tmTimer=null;} if(tmPoll){clearInterval(tmPoll);tmPoll=null;} }
+
+async function playTM(){
+  const uri=findTMUri();
+  if(!ensureReady())return;
+  if(!uri){alert("Ingen TM-låt hittad. Kontrollera att minst en TM-rad i körschemat har en Spotify-länk, och tryck Synka.");return;}
+  clearTM(); clearFade(); bgActive=false;
+  try{await player.setVolume(1);}catch(e){}
+  try{
+    await apiPlay({uris:[uri],position_ms:tmStart});
+    tmActive=true; activeCue=null; isPaused=false; markActive(); updateDock();
+    document.getElementById("tmBtn").textContent="■ Stoppar vid "+fmtTime(tmEnd);
+
+    // Hård backup-timer: stoppar garanterat efter (slut - start) ms
+    const dur=Math.max(200,tmEnd-tmStart);
+    tmTimer=setTimeout(stopTM, dur+120);
+
+    // Positionsbaserad kontroll: pollar faktisk uppspelningsposition och
+    // stoppar exakt när den passerar sluttiden — precis på tiondelen.
+    tmPoll=setInterval(async()=>{
+      try{
+        const st=await player.getCurrentState();
+        if(st && st.position>=tmEnd){ stopTM(); }
+      }catch(e){}
+    },50);
+  }catch(e){alert("Kunde inte spela TM-jingle: "+e.message);}
+}
+async function stopTM(){
+  clearTM();
+  try{await player.pause();}catch(e){}
+  tmActive=false; isPaused=true; updateDock();
+  document.getElementById("tmBtn").textContent="▶ Spela TM-jingle";
+}
+function fmtTime(ms){const s=ms/1000;const m=Math.floor(s/60);const rest=(s-m*60);return m+":"+(rest<10?"0":"")+rest.toFixed(1);}
+function refreshTMUI(){
+  const has=!!findTMUri();
+  document.getElementById("tmBtn").disabled=!(has && deviceId);
+  document.getElementById("tmNow").childNodes[1].nodeValue=fmtTime(tmStart)+"–"+fmtTime(tmEnd);
+}
+
 /* ============ API ============ */
 function authH(){return{Authorization:"Bearer "+token,"Content-Type":"application/json"};}
 async function apiPlay(body){const r=await fetch("https://api.spotify.com/v1/me/player/play?device_id="+deviceId,{method:"PUT",headers:authH(),body:JSON.stringify(body)});if(!r.ok&&r.status!==204)throw new Error("HTTP "+r.status);}
@@ -365,9 +429,9 @@ function initPlayer(){
   if(!token)return;
   setStatus("Startar spelaren…",false);
   player=new Spotify.Player({name:"Bröllop · musikstyrning",getOAuthToken:cb=>cb(token),volume:1});
-  player.addListener("ready",function(o){deviceId=o.device_id;setStatus("Ansluten — redo",true);document.getElementById("connectBtn").textContent="Ansluten ✓";document.getElementById("bgBtn").disabled=false;});
+  player.addListener("ready",function(o){deviceId=o.device_id;setStatus("Ansluten — redo",true);document.getElementById("connectBtn").textContent="Ansluten ✓";document.getElementById("bgBtn").disabled=false;refreshTMUI();});
   player.addListener("not_ready",function(){setStatus("Tappade anslutningen",false);});
-  player.addListener("player_state_changed",function(st){if(!st)return;isPaused=st.paused;const t=st.track_window&&st.track_window.current_track;nowTrackText=t?(t.name+" — "+((t.artists[0]&&t.artists[0].name)||"")):"";if(bgActive)refreshBgUI();else{markActive();updateDock();}});
+  player.addListener("player_state_changed",function(st){if(!st)return;isPaused=st.paused;const t=st.track_window&&st.track_window.current_track;nowTrackText=t?(t.name+" — "+((t.artists[0]&&t.artists[0].name)||"")):"";if(tmActive){return;}if(bgActive)refreshBgUI();else{markActive();updateDock();}});
   player.addListener("authentication_error",function(){setStatus("Inloggning misslyckades — anslut igen",false);});
   player.addListener("account_error",function(){setStatus("Kräver Spotify Premium",false);});
   player.connect();
@@ -385,9 +449,12 @@ document.getElementById("bgBtn").onclick=playBackground;
 document.getElementById("bgToggle").onclick=toggleBg;
 document.getElementById("cueToggle").onclick=cueToggle;
 document.getElementById("cueFade").onclick=fadeOutCue;
+document.getElementById("tmBtn").onclick=function(){ if(tmActive) stopTM(); else playTM(); };
 clientIdEl.oninput=function(e){localStorage.setItem("wed_client_id",e.target.value.trim());};
 bgUrlEl.oninput=function(e){bgUrl=e.target.value.trim();localStorage.setItem("wed_bg_url",bgUrl);};
 feedUrlEl.oninput=function(e){feedUrl=e.target.value.trim()||FEED_DEFAULT;localStorage.setItem("wed_feed_url",feedUrl);};
+tmStartEl.oninput=function(e){const v=e.target.value.trim()||"0:00";tmStart=parseTime(v);localStorage.setItem("wed_tm_start",v);refreshTMUI();};
+tmEndEl.oninput=function(e){const v=e.target.value.trim()||"0:13";tmEnd=parseTime(v);localStorage.setItem("wed_tm_end",v);refreshTMUI();};
 (async function(){
   load();
   const ok=await handleRedirect();
