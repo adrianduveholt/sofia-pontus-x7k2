@@ -316,11 +316,16 @@
       grid.appendChild(post);
     });
   }
+  let lastFeedJson = '';
   async function refreshFeed() {
     if (!API_URL) return;
     try {
       const res = await fetch(API_URL + '?action=list'); const out = await res.json();
       if (Array.isArray(out.items)) {
+        // Rendera bara om n\u00e4r datan faktiskt \u00e4ndrats \u2014 annars flimrar bilderna vid varje poll
+        const j = JSON.stringify(out.items);
+        if (j === lastFeedJson) return;
+        lastFeedJson = j;
         feed = out.items;
         updateFullTables();
         if (document.getElementById('view-wall').classList.contains('active')) renderWall();
