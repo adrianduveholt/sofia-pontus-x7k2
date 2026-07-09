@@ -140,7 +140,7 @@
 const FEED_DEFAULT = "https://script.googleusercontent.com/macros/echo?user_content_key=AUkAhnQmsIdonqVlyGucYBPOQnfOicIc0WC5liH23yLilGssJwTR4ZGj25k_YVgpw_Ts6l4vt3A6Q60rzwRebbPh1E_gwtwLvcganohqBZXOUdMY0qspizjTRg1omFMpLdocGQ_t8m7RVCv5cYo6bv6QmMddMacG1OONiCnHAH21t5VBPw2mcptZRQ1V0_WfiBwd17wVoa5d4TfvfjOY073CYJrGLYZLE7znjlBKXsIoHMxtvguzOdjIQIqwzVbJkCS3ljebD__sxvkbQq3XOBKFuMv3hhHaKQ&lib=MCA8XB6qY4smo6GuxIp2_lWwkZEVFKZry";
 const SCOPES = "streaming user-read-email user-read-private user-modify-playback-state user-read-playback-state";
 const REDIRECT = window.location.origin + window.location.pathname;
-const FADE_MS = 5000, FADE_STEPS = 50;
+const FADE_MS = 6000, FADE_STEPS = 60;
 
 /* ============ STATE ============ */
 let player=null, deviceId=null, token=null, clientId=null, bgUrl="", feedUrl=FEED_DEFAULT;
@@ -256,42 +256,40 @@ async function playCue(i){
   if(!ensureReady())return;
   if(!uri){alert('"'+c.moment+'" saknar giltig Spotify-länk.');return;}
   clearFade(); bgActive=false;
-  await setVolume(100);
-  try{await apiPlay({uris:[uri],position_ms:parseTime(resolveTime(c))});activeCue=i;isPaused=false;markActive();updateDock();}
-  catch(e){alert("Kunde inte starta: "+e.message);}
+  // full volym FÖRE start så en tidigare fade inte lämnar låten tyst
+  try{await player.setVolume(1);}catch(e){}
+  try{
+    await apiPlay({uris:[uri],position_ms:parseTime(resolveTime(c))});
+    activeCue=i; isPaused=false;
+    // säkerställ full volym även strax efter start (SDK hinner ibland återställa)
+    setTimeout(()=>{try{player.setVolume(1);}catch(e){}},400);
+    markActive(); updateDock();
+  }catch(e){alert("Kunde inte starta: "+e.message);}
 }
 async function cueToggle(){if(!player)return;if(isPaused){await player.resume();isPaused=false;}else{await player.pause();isPaused=true;}markActive();updateDock();}
 
-/* Fade via Web API-volym mot rätt enhet — pålitligare än enbart SDK-volym */
+/* Fade ut: SDK-volym, mjuk kurva, fast längd. SDK-volymen är omedelbar och
+   lokal (till skillnad från det tröga Web API:t) vilket ger en jämn nedtoning. */
 function fadeOutCue(){
-  if(activeCue===null)return; clearFade();
+  if(activeCue===null||!player)return; clearFade();
   let step=0;
   fadeTimer=setInterval(async()=>{
     step++;
-    const vol=Math.max(0,Math.round(100*(1-step/FADE_STEPS)));
-    await setVolume(vol);
+    const p=step/FADE_STEPS;                 // 0 → 1
+    const vol=Math.max(0,Math.pow(1-p,1.6));  // mjuk kurva mot noll
+    try{await player.setVolume(vol);}catch(e){}
     if(step>=FADE_STEPS){
       clearFade();
       try{await player.pause();}catch(e){}
       isPaused=true; markActive(); updateDock();
-      await setVolume(100); // återställ inför nästa låt
+      try{await player.setVolume(1);}catch(e){} // återställ inför nästa låt
     }
   },FADE_MS/FADE_STEPS);
 }
 function clearFade(){if(fadeTimer){clearInterval(fadeTimer);fadeTimer=null;}}
 
-/* setVolume: försök Web API (0-100) mot device, fall tillbaka på SDK (0-1) */
-async function setVolume(vol100){
-  const ok=await apiVolume(vol100);
-  if(!ok && player){try{await player.setVolume(Math.max(0,Math.min(1,vol100/100)));}catch(e){}}
-}
-async function apiVolume(vol100){
-  if(!token||!deviceId)return false;
-  try{
-    const r=await fetch("https://api.spotify.com/v1/me/player/volume?volume_percent="+vol100+"&device_id="+deviceId,{method:"PUT",headers:authH()});
-    return r.ok||r.status===204;
-  }catch(e){return false;}
-}
+/* Bakgrund/övrigt använder full volym direkt via SDK */
+async function setVolume(vol100){if(player){try{await player.setVolume(Math.max(0,Math.min(1,vol100/100)));}catch(e){}}}
 
 function markActive(){
   document.querySelectorAll(".cue").forEach((el,idx)=>{el.classList.toggle("active",idx===activeCue&&!bgActive);});
