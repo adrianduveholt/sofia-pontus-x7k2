@@ -216,7 +216,7 @@
             (i === 0 ? '<span class="lead-pill">I ledning</span>' : '') +
           '</div>' +
           '<div class="bar"><div class="bar-fill"></div></div>' +
-          '<div class="detail">' + s.solved + '/' + TASKS.length + ' uppgifter lösta</div>' +
+          '<div class="detail">' + (s.photos != null ? s.photos + ' bilder \u00b7 ' : '') + s.solved + '/' + TASKS.length + ' uppgifter l\u00f6sta</div>' +
         '</div>' +
         '<div class="pts"><span class="ptnum">0</span><small>po\u00e4ng</small></div>';
       el.appendChild(row);
