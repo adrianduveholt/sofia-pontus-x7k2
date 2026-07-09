@@ -268,21 +268,25 @@ async function playCue(i){
 }
 async function cueToggle(){if(!player)return;if(isPaused){await player.resume();isPaused=false;}else{await player.pause();isPaused=true;}markActive();updateDock();}
 
-/* Fade ut: SDK-volym, mjuk kurva, fast längd. SDK-volymen är omedelbar och
-   lokal (till skillnad från det tröga Web API:t) vilket ger en jämn nedtoning. */
+/* Fade ut: SDK-volym, perceptuell (exponentiell) kurva. Örat hör volym
+   logaritmiskt, så en linjär sänkning känns som ingenting förrän på slutet.
+   Vi går från 1.0 ned till ~0.02 (2%) exponentiellt, vilket låter som en
+   jämn, tydlig nedtoning hela vägen, och pausar först när det är nästan tyst. */
 function fadeOutCue(){
   if(activeCue===null||!player)return; clearFade();
+  const V0=1.0, VEND=0.02;          // start- och slutvolym
   let step=0;
   fadeTimer=setInterval(async()=>{
     step++;
-    const p=step/FADE_STEPS;                 // 0 → 1
-    const vol=Math.max(0,Math.pow(1-p,1.6));  // mjuk kurva mot noll
+    const p=step/FADE_STEPS;                     // 0 → 1
+    const vol=V0*Math.pow(VEND/V0, p);           // exponentiell: 1.0 → 0.02
     try{await player.setVolume(vol);}catch(e){}
     if(step>=FADE_STEPS){
       clearFade();
+      try{await player.setVolume(VEND);}catch(e){}  // säkerställ nästan tyst
       try{await player.pause();}catch(e){}
       isPaused=true; markActive(); updateDock();
-      try{await player.setVolume(1);}catch(e){} // återställ inför nästa låt
+      setTimeout(()=>{try{player.setVolume(1);}catch(e){}},250); // återställ inför nästa låt
     }
   },FADE_MS/FADE_STEPS);
 }
